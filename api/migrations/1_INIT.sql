@@ -1,9 +1,5 @@
 -- Account roles
-CREATE TYPE role AS ENUM (
-  'basic',
-  'admin',
-  'root'
-);
+CREATE TYPE role AS ENUM ('basic', 'admin', 'root');
 
 
 -- Accounts
