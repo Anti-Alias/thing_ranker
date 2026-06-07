@@ -22,7 +22,7 @@ CREATE TABLE thing (
   id serial PRIMARY KEY,
   account_id integer NOT NULL REFERENCES account(id),
   name varchar(128) NOT NULL UNIQUE,
-  image_name varchar(128) NOT NULL UNIQUE,
+  image_name varchar(128),
   created timestamptz NOT NULL DEFAULT NOW(),
   modified timestamptz 
 );
@@ -35,7 +35,7 @@ CREATE TABLE category (
   id serial PRIMARY KEY,
   account_id integer NOT NULL REFERENCES account(id),
   name varchar(128) NOT NULL UNIQUE,
-  image_name varchar(128) NOT NULL UNIQUE,
+  image_name varchar(128),
   created timestamptz NOT NULL DEFAULT NOW(),
   modified timestamptz 
 );
@@ -72,3 +72,16 @@ CREATE INDEX vote_created_idx ON vote(created);
 
 -- Seeds initial data
 INSERT INTO account (role, email, name, password) VALUES ('root', 'admin@admin.com', 'admin', 'fake_password');
+INSERT INTO category (account_id, name) VALUES (
+  (SELECT id FROM account WHERE role='root'),
+  'Thing'
+);
+
+-- CREATE TABLE category (
+--   id serial PRIMARY KEY,
+--   account_id integer NOT NULL REFERENCES account(id),
+--   name varchar(128) NOT NULL UNIQUE,
+--   image_name varchar(128) NOT NULL UNIQUE,
+--   created timestamptz NOT NULL DEFAULT NOW(),
+--   modified timestamptz 
+-- );
