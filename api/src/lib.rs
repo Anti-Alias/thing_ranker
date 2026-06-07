@@ -1,3 +1,2 @@
-mod app;
-
-pub use app::*;
+pub mod app;
+pub mod db;
