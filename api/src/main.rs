@@ -1,22 +1,20 @@
-use thing_ranker::{app, db};
+use thing_ranker::app;
 use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
 
-    let env = app::Env::from_env();
-    log::info!("Loading application config for {env} environment");
-    let config = app::Config::load(env);
+    // Gets profile to start application in
+    log::info!("Fetching profile");
+    let profile = app::AppProfile::from_env();
 
-    log::info!("Connecting to DB");
-    let pool = db::create_pool(&config).await;
-    log::info!("Running DB migrations");
-    db::MIGRATOR.run(&pool).await.unwrap();
+    // Creates app
+    log::info!("Creating application with profile {profile}");
+    let app = app::create_app_router(profile).await;
 
-    // Creates APP and serves it
-    log::info!("Starting application");
-    let app = app::create_app();
+    // Serves app
+    log::info!("Serving application");
     let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }

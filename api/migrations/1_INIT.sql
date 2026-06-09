@@ -77,11 +77,3 @@ INSERT INTO category (account_id, name) VALUES (
   'Thing'
 );
 
--- CREATE TABLE category (
---   id serial PRIMARY KEY,
---   account_id integer NOT NULL REFERENCES account(id),
---   name varchar(128) NOT NULL UNIQUE,
---   image_name varchar(128) NOT NULL UNIQUE,
---   created timestamptz NOT NULL DEFAULT NOW(),
---   modified timestamptz 
--- );
