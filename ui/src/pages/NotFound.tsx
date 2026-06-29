@@ -1,9 +1,10 @@
 import { Heading, VStack, Text } from "@chakra-ui/react";
 
-function Home() {
+function NotFound() {
+
   return (
     <VStack>
-      <Heading>About</Heading>
+      <Heading>Not Found</Heading>
       <Text>
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam sagittis, nisl non fermentum pulvinar, enim erat sagittis nunc, ut pulvinar felis mi at sem. Nam a dignissim leo, sit amet dignissim massa. Aenean pellentesque rhoncus massa, laoreet posuere massa finibus et. Duis sit amet rhoncus nisl. Curabitur dolor velit, bibendum eget nisi eget, tristique congue eros. Ut euismod sapien enim, vitae pretium ligula interdum ac. Nullam fringilla quis libero vitae eleifend. Mauris eget tortor placerat, luctus leo nec, gravida neque. Integer imperdiet viverra mauris sed facilisis. Cras ornare vehicula mi, vitae dapibus sapien egestas quis. Mauris lacinia mollis urna. Integer ornare, nunc et elementum accumsan, arcu tortor elementum nulla, eu molestie purus nulla vitae odio. Vestibulum bibendum quam id enim varius feugiat.
       </Text>
@@ -17,4 +18,4 @@ function Home() {
   );
 }
 
-export default Home;
+export default NotFound;
