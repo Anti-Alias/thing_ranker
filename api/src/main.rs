@@ -14,7 +14,7 @@ async fn main() {
     let app = app::create_app_router(profile).await;
 
     // Serves app
-    log::info!("Serving application");
-    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    log::info!("Serving application on port 8080");
+    let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }

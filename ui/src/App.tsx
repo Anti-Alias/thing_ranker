@@ -1,8 +1,13 @@
 import { Outlet } from "react-router";
-import Navbar from "./components/Navbar";
 import { Box, Flex } from "@chakra-ui/react";
+import { UserManager } from "oidc-client-ts";
+import Navbar from "./components/Navbar";
 
-function App() {
+export interface AppProps {
+  userManager: UserManager,
+}
+
+export default function App() {
   return (
     <Box>
       <Navbar />
@@ -14,5 +19,3 @@ function App() {
     </Box>
   );
 }
-
-export default App;

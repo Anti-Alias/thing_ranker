@@ -1,9 +1,10 @@
 import { Button, HStack, Spacer } from "@chakra-ui/react";
 import { Link } from "react-router";
 import { ColorModeButton } from "./ui/color-mode";
-import LogIn from "./LogIn";
+import SignIn from "./SignIn";
+import type { UserManager } from "oidc-client-ts";
 
-function Navbar() {
+export default function Navbar() {
   return (
     <HStack as="nav" bg="bg" padding={2} position="sticky" top={0}>
 
@@ -33,9 +34,12 @@ function Navbar() {
 
       { /** Right */}
       <ColorModeButton />
-      <LogIn />
+      <SignIn />
     </HStack>
   )
 }
 
-export default Navbar;
+export interface NavbarProps {
+  userManager: UserManager,
+}
+
