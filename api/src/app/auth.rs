@@ -1,5 +1,5 @@
 use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
-use jsonwebtoken::decode_header;
+use jsonwebtoken::{decode, decode_header};
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
