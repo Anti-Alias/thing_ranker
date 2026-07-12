@@ -1,7 +1,6 @@
 import { Heading, VStack, Text } from "@chakra-ui/react";
 
 function NotFound() {
-
   return (
     <VStack>
       <Heading>Not Found</Heading>

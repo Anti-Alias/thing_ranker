@@ -1,16 +1,25 @@
-import { Button, HStack, Spacer } from "@chakra-ui/react";
+import { Avatar, AvatarGroup, Button, HStack, Spacer } from "@chakra-ui/react";
 import { Link } from "react-router";
 import { ColorModeButton } from "./ui/color-mode";
-import SignIn from "./SignIn";
-import type { UserManager } from "oidc-client-ts";
+import SignInButton from "./SignInButton";
+import type { Account } from "../model/account";
+import { CONTENT_WIDTH } from "../constants";
 
-export default function Navbar() {
+export interface NavbarProps {
+  account: Account | null,
+  setAccount: (account: Account | null) => void,
+}
+
+export default function Navbar({ account, setAccount }: NavbarProps) {
+
+  const signedIn = !!account;
+
   return (
-    <HStack as="nav" bg="bg" padding={2} position="sticky" top={0}>
+    <HStack as="nav" bg="bg" paddingTop={2} position="sticky" top={0} width={CONTENT_WIDTH}>
 
       { /** Left */}
       <Link to="/">
-        <Button variant="ghost" fontSize={17}>
+        <Button variant="ghost" fontSize={17} padding={0}>
           ThingRanker
         </Button>
       </Link>
@@ -33,13 +42,19 @@ export default function Navbar() {
       <Spacer />
 
       { /** Right */}
+      {
+        account &&
+        <AvatarGroup>
+          <Avatar.Root>
+            <Avatar.Fallback />
+            <Avatar.Image src={account.picture} />
+          </Avatar.Root>
+        </AvatarGroup>
+      }
+      {!signedIn && <SignInButton setAccount={setAccount} />}
+      {signedIn && <Button size="xs" onClick={() => setAccount(null)}>Sign out</Button>}
       <ColorModeButton />
-      <SignIn />
-    </HStack>
+    </HStack >
   )
-}
-
-export interface NavbarProps {
-  userManager: UserManager,
 }
 

@@ -1,12 +1,20 @@
-use crate::app;
+use crate::app::{self, DbConfig};
 use sqlx::{Pool, Postgres, migrate::Migrator, postgres::PgPoolOptions};
 
 pub static MIGRATOR: Migrator = sqlx::migrate!();
 
-pub async fn create_pool(config: &app::Config) -> Pool<Postgres> {
+pub async fn create_pool(config: &app::DbConfig) -> Pool<Postgres> {
+    let DbConfig {
+        name,
+        user,
+        password,
+        host,
+        port,
+    } = config;
+    let url = format!("postgresql://{user}:{password}@{host}:{port}/{name}");
     PgPoolOptions::new()
         .max_connections(64)
-        .connect(&config.db.url)
+        .connect(&url)
         .await
         .unwrap()
 }

@@ -1,68 +1,70 @@
+use std::sync::Arc;
+
 use config::File;
+use jwks_client_rs::{JwksClient, source::WebSource};
 use serde::Deserialize;
 use sqlx::PgPool;
-use std::{env, fmt};
 
+/// Application configuration
 #[derive(Deserialize, Debug)]
 pub struct Config {
+    pub port: u32,
     pub db: DbConfig,
+    pub cors: CorsConfig,
+    pub auth: AuthConfig,
+    pub oidc: OIDCConfig,
+}
+
+/// Config values for database connectivity
+#[derive(Deserialize, Debug)]
+pub struct DbConfig {
+    pub name: String,
+    pub user: String,
+    pub password: String,
+    pub host: String,
+    pub port: u32,
+}
+
+/// Config values for CORS
+#[derive(Deserialize, Debug)]
+pub struct CorsConfig {
+    pub allowed_origin: String,
+}
+
+/// Config values for authenticating accounts
+#[derive(Deserialize, Debug)]
+pub struct AuthConfig {
+    /// Secret used to sign and validate JWTs
+    pub jwt_secret: String,
+    /// Long long before JWTs expire
+    pub jwt_exp_secs: i64,
+}
+
+/// Config values for dealing with identity providers through the OIDC protocol
+#[derive(Deserialize, Debug)]
+pub struct OIDCConfig {
+    pub google: GoogleConfig,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct DbConfig {
-    pub url: String,
+pub struct GoogleConfig {
+    pub client_id: String,
 }
 
 impl Config {
     /// Loads app configuration from a base file, and an environment-specific file.
-    pub fn load(profile: AppProfile) -> Self {
-        const BASE_FILE_SOURCE: &str = "config/base.yml";
-        let env_file_source = match profile {
-            AppProfile::Local => "config/local.yml",
-            AppProfile::Dev => "config/dev.yml",
-            AppProfile::Prod => "config/prod.yml",
-        };
-        log::info!("Loading config files {BASE_FILE_SOURCE} and {env_file_source}");
-        let builder = config::Config::builder()
-            .add_source(File::with_name(BASE_FILE_SOURCE))
-            .add_source(File::with_name(env_file_source));
+    pub fn load(config_path: &str) -> Self {
+        let builder = config::Config::builder().add_source(File::with_name(config_path));
         builder.build().unwrap().try_deserialize::<Self>().unwrap()
     }
 }
 
 /// Application state
-#[derive(Clone, Debug)]
-pub struct AppState {
+pub type AppState = Arc<AppStateInner>;
+
+pub struct AppStateInner {
     pub pool: PgPool,
-}
-
-/// Environment of the application
-#[derive(Copy, Clone, Eq, PartialEq, Default, Debug)]
-pub enum AppProfile {
-    #[default]
-    Local,
-    Dev,
-    Prod,
-}
-
-impl fmt::Display for AppProfile {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            AppProfile::Local => write!(f, "Local"),
-            AppProfile::Dev => write!(f, "Dev"),
-            AppProfile::Prod => write!(f, "Prod"),
-        }
-    }
-}
-
-impl AppProfile {
-    pub fn from_env() -> Self {
-        let profile = env::var("APP_PROFILE").unwrap_or_else(|_| String::from("Local"));
-        match profile.as_str() {
-            "Local" => Self::Local,
-            "Dev" => Self::Dev,
-            "Prod" => Self::Prod,
-            _ => panic!("Unexpected profile. Valid values are Local, Dev, Prod"),
-        }
-    }
+    pub jwks_client: JwksClient<WebSource>,
+    pub oidc_config: OIDCConfig,
+    pub auth_config: AuthConfig,
 }

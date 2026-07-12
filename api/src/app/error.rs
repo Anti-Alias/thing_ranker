@@ -1,8 +1,9 @@
 use axum::{
     extract::multipart::MultipartError,
-    http::StatusCode,
+    http::{StatusCode, header::ToStrError},
     response::{IntoResponse, Response},
 };
+use jwks_client_rs::JwksClientError;
 use thiserror::Error;
 
 /// Encompasses all errors that can occur in the API
@@ -18,6 +19,22 @@ pub enum ApiError {
     ThingAlreadyExists,
     #[error("Missing file name")]
     MissingFileName,
+    #[error("Auth header missing")]
+    AuthHeaderMissing,
+    #[error("Auth header not a valid string: {0}")]
+    AuthHeaderNotAString(#[from] ToStrError),
+    #[error("Auth header missing bearer")]
+    AuthHeaderMissingBearer,
+    #[error("Auth header missing JWT")]
+    AuthHeaderMissingJWT,
+    #[error("Auth header malformed")]
+    AuthHeaderMalformed,
+    #[error("Auth header missing kid")]
+    AuthHeaderMissingKid,
+    #[error("Auth header decoding failed: {0}")]
+    AuthHeaderDecodingFailed(#[from] jsonwebtoken::errors::Error),
+    #[error("Jwks client failed to decode JWT: {0}")]
+    JwksClientError(#[from] JwksClientError),
     #[error(transparent)]
     SqlxError(#[from] sqlx::Error),
     #[error(transparent)]
@@ -32,6 +49,14 @@ impl IntoResponse for ApiError {
             Self::CategoryAlreadyExists => StatusCode::BAD_REQUEST,
             Self::ThingAlreadyExists => StatusCode::BAD_REQUEST,
             Self::MissingFileName => StatusCode::BAD_REQUEST,
+            Self::AuthHeaderMissing => StatusCode::BAD_REQUEST,
+            Self::AuthHeaderNotAString(_) => StatusCode::BAD_REQUEST,
+            Self::AuthHeaderMissingBearer => StatusCode::BAD_REQUEST,
+            Self::AuthHeaderMissingJWT => StatusCode::BAD_REQUEST,
+            Self::AuthHeaderMalformed => StatusCode::BAD_REQUEST,
+            Self::AuthHeaderMissingKid => StatusCode::BAD_REQUEST,
+            Self::AuthHeaderDecodingFailed(_) => StatusCode::BAD_REQUEST,
+            Self::JwksClientError(_) => StatusCode::BAD_REQUEST,
             Self::SqlxError(error) => {
                 log::error!("{error}");
                 StatusCode::INTERNAL_SERVER_ERROR

@@ -10,7 +10,9 @@ chrono = { version = "0.4", features = ["serde"] }
 config = { version = "0.15.23", features = ["yaml"] }
 env_logger = "0.11.10"
 jsonwebtoken = "10.4.0"
+jwks_client_rs = "0.6.1"
 log = "0.4.32"
+reqwest = "0.13.4"
 serde = { version = "1.0.228", features = ["derive"] }
 sqlx = { version = "0.9.0", features = ["chrono", "postgres", "runtime-tokio"] }
 thiserror = "2.0.18"

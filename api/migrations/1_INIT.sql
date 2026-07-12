@@ -7,8 +7,6 @@ CREATE TABLE account (
   id serial PRIMARY KEY,
   role role NOT NULL,
   email varchar(128) NOT NULL UNIQUE,
-  name varchar(128) NOT NULL UNIQUE,
-  password text NOT NULL,
   created timestamptz NOT NULL DEFAULT NOW(),
   modified timestamptz 
 );
@@ -71,7 +69,7 @@ CREATE INDEX vote_created_idx ON vote(created);
 
 
 -- Seeds initial data
-INSERT INTO account (role, email, name, password) VALUES ('root', 'admin@admin.com', 'admin', 'fake_password');
+INSERT INTO account (role, email) VALUES ('root', 'root@root.com');
 INSERT INTO category (account_id, name) VALUES (
   (SELECT id FROM account WHERE role='root'),
   'Thing'

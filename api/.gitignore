@@ -1,4 +1,2 @@
 target
-config/local.yml
-config/dev.yml
-config/prod.yml
+config.yml

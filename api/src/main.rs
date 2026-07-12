@@ -1,18 +1,16 @@
-use thing_ranker::app;
+use thing_ranker::app::{self, Config};
 use tokio::net::TcpListener;
+
+const CONFIG_PATH: &str = "config.yml";
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
-
-    // Gets profile to start application in
-    log::info!("Fetching profile");
-    let profile = app::AppProfile::from_env();
-
+    // Loads application config
+    log::info!("Loading config {CONFIG_PATH}");
+    let config = Config::load(CONFIG_PATH);
     // Creates app
-    log::info!("Creating application with profile {profile}");
-    let app = app::create_app_router(profile).await;
-
+    let app = app::create_app_router(config).await;
     // Serves app
     log::info!("Serving application on port 8080");
     let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
