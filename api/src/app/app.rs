@@ -46,6 +46,7 @@ pub async fn create_app_router(config: Config) -> Router {
         .route("/categories", post(category::create_category))
         .route_layer(auth_layer)
         .route("/categories/{category_id}", get(category::get_category))
+        .route("/things", get(thing::get_thing_page))
         .route("/things/{thing_id}", get(thing::get_thing))
         .route("/account/token", post(account::create_token))
         .route("/health", get(health))

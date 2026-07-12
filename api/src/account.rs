@@ -4,7 +4,7 @@ use chrono::Utc;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use sqlx::prelude::{FromRow, Type};
+use sqlx::prelude::*;
 
 use crate::app::{ApiError, AppState};
 use crate::util::parse_bearer_token;
@@ -61,8 +61,8 @@ pub async fn create_token(
 }
 
 async fn get_or_create_account(email: &str, pool: &PgPool) -> Result<Account, ApiError> {
-    const QUERY: &str = "SELECT id,role,email FROM account WHERE email=$1";
-    let account: Option<Account> = sqlx::query_as(QUERY)
+    let query = "SELECT id,role,email FROM account WHERE email=$1";
+    let account: Option<Account> = sqlx::query_as(query)
         .bind(email)
         .fetch_optional(pool)
         .await?;
@@ -74,8 +74,7 @@ async fn get_or_create_account(email: &str, pool: &PgPool) -> Result<Account, Ap
 }
 
 async fn create_account(email: &str, pool: &PgPool) -> Result<Account, ApiError> {
-    const QUERY: &str =
-        "INSERT INTO account (role,email) VALUES ('basic',$1) RETURNING id,role,email";
-    let account: Account = sqlx::query_as(QUERY).bind(email).fetch_one(pool).await?;
+    let query = "INSERT INTO account (role,email) VALUES ('basic',$1) RETURNING id,role,email";
+    let account: Account = sqlx::query_as(query).bind(email).fetch_one(pool).await?;
     Ok(account)
 }
