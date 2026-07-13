@@ -6,6 +6,8 @@ use axum::{
 use jwks_client_rs::JwksClientError;
 use thiserror::Error;
 
+use crate::asset::AssetStoreError;
+
 /// Encompasses all errors that can occur in the API
 #[derive(Error, Debug)]
 pub enum ApiError {
@@ -17,8 +19,6 @@ pub enum ApiError {
     CategoryAlreadyExists,
     #[error("Thing already exists")]
     ThingAlreadyExists,
-    #[error("Missing file name")]
-    MissingFileName,
     #[error("Auth header missing")]
     AuthHeaderMissing,
     #[error("Auth header not a valid string: {0}")]
@@ -37,6 +37,8 @@ pub enum ApiError {
     Base64DecodingFailed,
     #[error("Jwks client failed to decode JWT: {0}")]
     JwksClientError(#[from] JwksClientError),
+    #[error("Asset store error: {0}")]
+    AssetStoreError(#[from] AssetStoreError),
     #[error(transparent)]
     SqlxError(#[from] sqlx::Error),
     #[error(transparent)]
@@ -50,7 +52,6 @@ impl IntoResponse for ApiError {
             Self::ThingNotFound => StatusCode::NOT_FOUND,
             Self::CategoryAlreadyExists => StatusCode::BAD_REQUEST,
             Self::ThingAlreadyExists => StatusCode::BAD_REQUEST,
-            Self::MissingFileName => StatusCode::BAD_REQUEST,
             Self::AuthHeaderMissing => StatusCode::BAD_REQUEST,
             Self::AuthHeaderNotAString(_) => StatusCode::BAD_REQUEST,
             Self::AuthHeaderMissingBearer => StatusCode::BAD_REQUEST,
@@ -60,6 +61,10 @@ impl IntoResponse for ApiError {
             Self::AuthHeaderDecodingFailed(_) => StatusCode::BAD_REQUEST,
             Self::Base64DecodingFailed => StatusCode::BAD_REQUEST,
             Self::JwksClientError(_) => StatusCode::BAD_REQUEST,
+            Self::AssetStoreError(error) => {
+                log::error!("{error}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
             Self::SqlxError(error) => {
                 log::error!("{error}");
                 StatusCode::INTERNAL_SERVER_ERROR

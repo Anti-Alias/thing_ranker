@@ -59,11 +59,8 @@ pub async fn create_category(
     // Transaction start
     let mut tx: PgTransaction = state.pool.begin().await?;
     let conn = &mut *tx;
-    let image_name = request
-        .file
-        .metadata
-        .file_name
-        .ok_or(ApiError::MissingFileName)?;
+    let category_name = uuid::Uuid::new_v4().to_string();
+    let category_name = format!("{category_name}.png");
 
     // Insert category
     if category_exists(&request.name, conn).await? {
@@ -77,7 +74,7 @@ pub async fn create_category(
     let category: Category = sqlx::query_as(query)
         .bind(ROOT_ACCOUNT_ID)
         .bind(&request.name)
-        .bind(&image_name)
+        .bind(&category_name)
         .fetch_one(conn)
         .await?;
     // Transaction end

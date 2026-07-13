@@ -5,6 +5,8 @@ use serde::Serialize;
 
 use crate::app::ApiError;
 
+pub const STATIC_FILE_BASE_PATH: &str = "assets";
+
 /// Commonly used sorting order
 #[derive(Serialize, Deserialize, Copy, Clone, Eq, PartialEq, Default, Debug)]
 #[serde(rename_all = "camelCase")]

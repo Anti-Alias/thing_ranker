@@ -152,15 +152,12 @@ pub async fn create_thing(
     // Transaction start
     let mut tx: PgTransaction = state.pool.begin().await?;
     let conn = &mut *tx;
-    let image_name = request
-        .file
-        .metadata
-        .file_name
-        .ok_or(ApiError::MissingFileName)?;
-    // Insert thing
+    // Insert thing in DB
     if thing_exists(&request.name, conn).await? {
         return Err(ApiError::ThingAlreadyExists);
     }
+    let image_name = uuid::Uuid::new_v4().to_string();
+    let image_name = format!("{image_name}.png");
     let query = "
         INSERT INTO thing (account_id, name, image_name)
         VALUES ($1, $2, $3)
@@ -171,6 +168,11 @@ pub async fn create_thing(
         .bind(&request.name)
         .bind(&image_name)
         .fetch_one(conn)
+        .await?;
+    // Write image bytes to asset store
+    state
+        .asset_store
+        .write("images", &image_name, &request.file.contents)
         .await?;
     // Transaction end
     tx.commit().await?;
