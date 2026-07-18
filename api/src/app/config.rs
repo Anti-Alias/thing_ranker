@@ -1,6 +1,10 @@
 use config::File;
 use serde::Deserialize;
 
+use crate::account::AccountRole;
+
+const CONFIG_PATH: &str = "config.yml";
+
 /// Application configuration
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -10,6 +14,7 @@ pub struct Config {
     pub cors: CorsConfig,
     pub auth: AuthConfig,
     pub oidc: OIDCConfig,
+    pub roles: Vec<AccountRole>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -56,9 +61,9 @@ pub struct GoogleConfig {
 }
 
 impl Config {
-    /// Loads app configuration from a base file, and an environment-specific file.
-    pub fn load(config_path: &str) -> Self {
-        let builder = config::Config::builder().add_source(File::with_name(config_path));
+    /// Loads config from a file
+    pub fn load() -> Self {
+        let builder = config::Config::builder().add_source(File::with_name(CONFIG_PATH));
         builder.build().unwrap().try_deserialize::<Self>().unwrap()
     }
 }

@@ -1,5 +1,5 @@
 use axum::{
-    Json,
+    Extension, Json,
     body::Bytes,
     extract::{Path, State},
     http::StatusCode,
@@ -10,10 +10,10 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use sqlx::{PgConnection, PgTransaction};
 
-use crate::app::{ApiError, ApiResponse, AppState};
-
-// TODO: Remove
-const ROOT_ACCOUNT_ID: i32 = 1;
+use crate::{
+    account::AccountClaims,
+    app::{ApiError, ApiResponse, AppState},
+};
 
 #[skip_serializing_none]
 #[derive(sqlx::FromRow, Serialize, Deserialize, Debug)]
@@ -54,6 +54,7 @@ pub async fn get_category(
 
 pub async fn create_category(
     State(state): State<AppState>,
+    Extension(claims): Extension<AccountClaims>,
     TypedMultipart(request): TypedMultipart<CreateCategoryRequest>,
 ) -> ApiResponse<Category> {
     // Transaction start
@@ -72,7 +73,7 @@ pub async fn create_category(
         RETURNING id,account_id,name,image,created,modified
     ";
     let category: Category = sqlx::query_as(query)
-        .bind(ROOT_ACCOUNT_ID)
+        .bind(claims.id)
         .bind(&request.name)
         .bind(&category_name)
         .fetch_one(conn)
