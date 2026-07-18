@@ -7,18 +7,20 @@ import './main.css';
 import { CustomChakraProvider } from "./components/ui/provider";
 import NotFound from "./pages/NotFound";
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import RootErrorBoundary from "./pages/RootErrorBoundary";
+import RootErrorBoundary from "./components/RootErrorBoundary";
 import { GOOGLE_CLIENT_ID } from "./constants";
+import Things from "./pages/Things";
 
 /** All page routes in application  */
 const router = createBrowserRouter([
   {
-    path: "/",
+    path: '/',
     Component: App,
     ErrorBoundary: RootErrorBoundary,
     children: [
       { index: true, Component: Home },
-      { path: "/*", Component: NotFound },
+      { path: '/things', Component: Things },
+      { path: '/*', Component: NotFound },
     ],
   },
 ]);

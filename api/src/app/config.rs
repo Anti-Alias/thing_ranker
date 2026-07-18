@@ -1,18 +1,22 @@
-use std::sync::Arc;
-
 use config::File;
-use jwks_client_rs::{JwksClient, source::WebSource};
 use serde::Deserialize;
-use sqlx::PgPool;
 
 /// Application configuration
 #[derive(Deserialize, Debug)]
 pub struct Config {
     pub port: u32,
+    pub asset_store_type: AssetStoreType,
     pub db: DbConfig,
     pub cors: CorsConfig,
     pub auth: AuthConfig,
     pub oidc: OIDCConfig,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
+pub enum AssetStoreType {
+    Local,
+    S3,
 }
 
 /// Config values for database connectivity
@@ -57,14 +61,4 @@ impl Config {
         let builder = config::Config::builder().add_source(File::with_name(config_path));
         builder.build().unwrap().try_deserialize::<Self>().unwrap()
     }
-}
-
-/// Application state
-pub type AppState = Arc<AppStateInner>;
-
-pub struct AppStateInner {
-    pub pool: PgPool,
-    pub jwks_client: JwksClient<WebSource>,
-    pub oidc_config: OIDCConfig,
-    pub auth_config: AuthConfig,
 }

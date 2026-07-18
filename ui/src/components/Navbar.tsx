@@ -15,7 +15,7 @@ export default function Navbar({ account, setAccount }: NavbarProps) {
   const signedIn = !!account;
 
   return (
-    <HStack as="nav" bg="bg" paddingTop={2} position="sticky" top={0} width={CONTENT_WIDTH}>
+    <HStack as="nav" bg="bg" paddingTop={2} position="sticky" top={0} width={CONTENT_WIDTH} zIndex={1}>
 
       { /** Left */}
       <Link to="/">
@@ -45,7 +45,7 @@ export default function Navbar({ account, setAccount }: NavbarProps) {
       {
         account &&
         <AvatarGroup>
-          <Avatar.Root>
+          <Avatar.Root size="xs">
             <Avatar.Fallback />
             <Avatar.Image src={account.picture} />
           </Avatar.Root>

@@ -5,11 +5,7 @@ import Navbar from "./components/Navbar";
 import { useState } from "react";
 import { initAccount, writeAccountToStorage, type Account } from "./model/account";
 import { CONTENT_WIDTH } from "./constants";
-
-/** Properties to pass directly to child pages */
-export interface PageProps {
-  account: Account | null, setAccount: (account: Account) => void,
-}
+import type { PageProps } from "./model/page";
 
 export default function App() {
 
@@ -23,7 +19,7 @@ export default function App() {
   };
 
   // Properties accessible from pages through context
-  const pageProps: PageProps = { account, setAccount };
+  const pageProps: PageProps = { account };
 
   return (
     <Box>
