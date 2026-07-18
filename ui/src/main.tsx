@@ -7,7 +7,7 @@ import './main.css';
 import { CustomChakraProvider } from "./components/ui/provider";
 import NotFound from "./pages/NotFound";
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import RootErrorBoundary from "./pages/RootErrorBoundary";
+import RootErrorBoundary from "./components/RootErrorBoundary";
 import { GOOGLE_CLIENT_ID } from "./constants";
 import Things from "./pages/Things";
 

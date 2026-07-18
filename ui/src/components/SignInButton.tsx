@@ -5,7 +5,7 @@ import { toaster } from "./ui/toaster";
 import { parseAccountToken, type Account } from "../model/account";
 import { fetchAccountToken } from "../api";
 
-export interface SignInButtonProps {
+interface SignInButtonProps {
   setAccount: (account: Account) => void,
 }
 

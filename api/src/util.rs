@@ -1,5 +1,6 @@
 use axum::http::HeaderMap;
 use axum::http::header;
+use base64::prelude::*;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -35,4 +36,16 @@ pub fn parse_bearer_token(headers: &HeaderMap) -> Result<&str, ApiError> {
         return Err(ApiError::AuthHeaderMissingJWT);
     };
     Ok(jwt)
+}
+
+/// Decodes an optional Base64 encoded cursor its original string value.
+pub fn decode_cursor(cursor: Option<String>) -> Result<Option<String>, ApiError> {
+    let name_bytes = match cursor {
+        Some(cursor) => BASE64_STANDARD
+            .decode(cursor)
+            .map_err(|_| ApiError::Base64DecodingFailed)?,
+        None => return Ok(None),
+    };
+    let name_string = String::from_utf8(name_bytes).map_err(|_| ApiError::Base64DecodingFailed)?;
+    Ok(Some(name_string))
 }

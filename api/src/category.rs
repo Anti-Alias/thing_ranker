@@ -22,7 +22,7 @@ pub struct Category {
     pub id: i32,
     pub account_id: i32,
     pub name: String,
-    pub image_name: Option<String>,
+    pub image: Option<String>,
     pub created: DateTime<Utc>,
     pub modified: Option<DateTime<Utc>>,
 }
@@ -38,7 +38,7 @@ pub async fn get_category(
     State(state): State<AppState>,
 ) -> ApiResponse<Category> {
     let query: &str = "
-        SELECT id,account_id,name,image_name,created,modified
+        SELECT id,account_id,name,image,created,modified
         FROM category
         WHERE id = $1
     ";
@@ -67,9 +67,9 @@ pub async fn create_category(
         return Err(ApiError::CategoryAlreadyExists);
     }
     let query = "
-        INSERT INTO category (account_id, name, image_name)
+        INSERT INTO category (account_id, name, image)
         VALUES ($1, $2, $3)
-        RETURNING id,account_id,name,image_name,created,modified
+        RETURNING id,account_id,name,image,created,modified
     ";
     let category: Category = sqlx::query_as(query)
         .bind(ROOT_ACCOUNT_ID)

@@ -2,7 +2,7 @@ export interface Thing {
   id: number,
   accountId: number,
   name: string,
-  imageName?: string,
+  image?: string,
   created: string,
   modified: string,
 }

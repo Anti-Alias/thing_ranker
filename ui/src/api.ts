@@ -13,10 +13,10 @@ export async function fetchAccountToken(idpCredential: string): Promise<string> 
   }
 }
 
-export async function fetchThingPage(cursor?: string, order?: Order): Promise<ThingPage> {
-  const params = new URLSearchParams();
+export async function fetchThingPage(order: Order, name?: string | null, cursor?: string | null): Promise<ThingPage> {
+  const params = new URLSearchParams({ order });
   if (cursor) params.append('cursor', cursor);
-  if (order) params.append('order', order);
+  if (name) params.append('name', name);
   const url = new URL(`${API_BASE_URL}/things`);
   url.search = params.toString();
   const response = await fetch(url);

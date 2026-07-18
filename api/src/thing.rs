@@ -9,11 +9,12 @@ use base64::prelude::*;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use sqlx::{PgConnection, PgTransaction};
+use sqlx::{PgConnection, PgTransaction, Postgres, QueryBuilder};
 
 use crate::{
     app::{ApiError, ApiResponse, AppState},
-    util::Order,
+    image::process_image,
+    util::{Order, decode_cursor},
 };
 
 // TODO: Remove
@@ -28,7 +29,7 @@ pub struct Thing {
     pub id: i32,
     pub account_id: i32,
     pub name: String,
-    pub image_name: Option<String>,
+    pub image: Option<String>,
     pub created: DateTime<Utc>,
     pub modified: Option<DateTime<Utc>>,
 }
@@ -43,6 +44,7 @@ pub struct CreateThingRequest {
 pub struct ThingQuery {
     order: Option<Order>,
     cursor: Option<String>,
+    name: Option<String>,
 }
 
 #[skip_serializing_none]
@@ -54,7 +56,7 @@ pub struct ThingPage {
 
 pub async fn get_thing(Path(id): Path<i32>, State(state): State<AppState>) -> ApiResponse<Thing> {
     let query = "
-        SELECT id,account_id,name,image_name,created,modified
+        SELECT id,account_id,name,image,created,modified
         FROM thing
         WHERE id = $1
     ";
@@ -72,77 +74,58 @@ pub async fn get_thing_page(
     Query(params): Query<ThingQuery>,
     State(state): State<AppState>,
 ) -> ApiResponse<ThingPage> {
-    // Gets a page of things
-    let order = params.order.unwrap_or_default();
-    let things: Vec<Thing> = match (params.cursor, order) {
-        (Some(cursor), Order::Asc) => {
-            let name = BASE64_STANDARD
-                .decode(cursor)
-                .map_err(|_| ApiError::Base64DecodingFailed)?;
-            let name: &str = str::from_utf8(&name).map_err(|_| ApiError::Base64DecodingFailed)?;
-            let query = "
-                SELECT id,account_id,name,image_name,created,modified
-                FROM thing
-                WHERE name > $1
-                ORDER BY name ASC
-                LIMIT $2
-            ";
-            sqlx::query_as(query)
-                .bind(name)
-                .bind(THING_PAGE_SIZE)
-                .fetch_all(&state.pool)
-                .await?
+    // Gets a page of things + 1 extra entry
+    let mut things = {
+        let cursor = decode_cursor(params.cursor)?;
+        let order = params.order.unwrap_or_default();
+        let base_query = "SELECT id,account_id,name,image,created,modified FROM thing WHERE 1=1";
+        let mut builder = QueryBuilder::<Postgres>::new(base_query);
+        // Filter by name similarity
+        if let Some(name) = params.name {
+            if name.chars().nth(2).is_none() {
+                return Err(ApiError::QueryStringTooSmall);
+            }
+            builder
+                .push(" AND name ILIKE '%' || ")
+                .push_bind(name)
+                .push("|| '%'");
         }
-        (Some(cursor), Order::Desc) => {
-            let name = BASE64_STANDARD
-                .decode(cursor)
-                .map_err(|_| ApiError::Base64DecodingFailed)?;
-            let name: &str = str::from_utf8(&name).map_err(|_| ApiError::Base64DecodingFailed)?;
-            let query = "
-                SELECT id,account_id,name,image_name,created,modified
-                FROM thing
-                WHERE name < $1
-                ORDER BY name DESC
-                LIMIT $2
-            ";
-            sqlx::query_as(query)
-                .bind(name)
-                .bind(THING_PAGE_SIZE)
-                .fetch_all(&state.pool)
-                .await?
-        }
-        (None, Order::Asc) => {
-            let query = "
-                SELECT id,account_id,name,image_name,created,modified
-                FROM thing
-                ORDER BY name ASC
-                LIMIT $1
-            ";
-            sqlx::query_as(query)
-                .bind(THING_PAGE_SIZE)
-                .fetch_all(&state.pool)
-                .await?
-        }
-        (None, Order::Desc) => {
-            let query = "
-                SELECT id,account_id,name,image_name,created,modified
-                FROM thing
-                ORDER BY name DESC
-                LIMIT $1
-            ";
-            sqlx::query_as(query)
-                .bind(THING_PAGE_SIZE)
-                .fetch_all(&state.pool)
-                .await?
+        // Order / page logic
+        match (cursor, order) {
+            (Some(cursor), Order::Asc) => {
+                builder.push(" AND name >= ").push_bind(cursor);
+                builder.push(" ORDER BY name ASC");
+            }
+            (Some(cursor), Order::Desc) => {
+                builder.push(" AND name <= ").push_bind(cursor);
+                builder.push(" ORDER BY name DESC");
+            }
+            (None, Order::Asc) => {
+                builder.push(" ORDER BY name ASC");
+            }
+            (None, Order::Desc) => {
+                builder.push(" ORDER BY name DESC");
+            }
+        };
+        builder.push(" LIMIT ").push_bind(THING_PAGE_SIZE + 1);
+        builder
+            .build_query_as::<Thing>()
+            .fetch_all(&state.pool)
+            .await?
+    };
+    // Returns thing page, with cursor if there are more rows
+    let has_more_rows = things.len() as i32 == THING_PAGE_SIZE + 1;
+    let thing_page = if has_more_rows {
+        let last_thing = things.pop().unwrap();
+        let cursor = Some(BASE64_STANDARD.encode(&last_thing.name));
+        ThingPage { things, cursor }
+    } else {
+        ThingPage {
+            things,
+            cursor: None,
         }
     };
-    // Creates cursor using last thing in page
-    let cursor = things
-        .last()
-        .map(|thing| BASE64_STANDARD.encode(&thing.name));
-    // Response
-    let page = ThingPage { things, cursor };
-    Ok((StatusCode::OK, Json(page)))
+    return Ok((StatusCode::OK, Json(thing_page)));
 }
 
 pub async fn create_thing(
@@ -152,16 +135,18 @@ pub async fn create_thing(
     // Transaction start
     let mut tx: PgTransaction = state.pool.begin().await?;
     let conn = &mut *tx;
+    // Processes image bytes
+    let image_bytes = process_image(&request.file.contents)?;
     // Insert thing in DB
     if thing_exists(&request.name, conn).await? {
         return Err(ApiError::ThingAlreadyExists);
     }
     let image_name = uuid::Uuid::new_v4().to_string();
-    let image_name = format!("{image_name}.png");
+    let image_name = format!("{image_name}.webp");
     let query = "
-        INSERT INTO thing (account_id, name, image_name)
+        INSERT INTO thing (account_id, name, image)
         VALUES ($1, $2, $3)
-        RETURNING id,account_id,name,image_name,created,modified
+        RETURNING id,account_id,name,image,created,modified
     ";
     let thing: Thing = sqlx::query_as(query)
         .bind(ROOT_ACCOUNT_ID)
@@ -172,7 +157,7 @@ pub async fn create_thing(
     // Write image bytes to asset store
     state
         .asset_store
-        .write("images", &image_name, &request.file.contents)
+        .write("images", &image_name, &image_bytes)
         .await?;
     // Transaction end
     tx.commit().await?;

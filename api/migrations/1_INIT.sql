@@ -1,3 +1,6 @@
+-- Enable TRGM extension for GIN and GIST indexes. Used for efficient text searching.
+CREATE EXTENSION pg_trgm;
+
 -- Account roles
 CREATE TYPE role AS ENUM ('basic', 'admin', 'root');
 
@@ -20,12 +23,13 @@ CREATE TABLE thing (
   id serial PRIMARY KEY,
   account_id integer NOT NULL REFERENCES account(id),
   name varchar(128) NOT NULL UNIQUE,
-  image_name varchar(128),
+  image varchar(128),
   created timestamptz NOT NULL DEFAULT NOW(),
   modified timestamptz 
 );
 CREATE INDEX thing_created_idx ON thing(created);
 CREATE INDEX thing_modified_idx ON thing(modified);
+CREATE INDEX thing_name_trgm_idx ON thing USING GIST(name gist_trgm_ops);
 
 
 -- Categories
@@ -33,12 +37,13 @@ CREATE TABLE category (
   id serial PRIMARY KEY,
   account_id integer NOT NULL REFERENCES account(id),
   name varchar(128) NOT NULL UNIQUE,
-  image_name varchar(128),
+  image varchar(128),
   created timestamptz NOT NULL DEFAULT NOW(),
   modified timestamptz 
 );
 CREATE INDEX category_created_idx ON category(created);
 CREATE INDEX category_modified_idx ON category(modified);
+CREATE INDEX category_name_trgm_idx ON category USING GIST(name gist_trgm_ops);
 
 
 -- The rankings of things in categories

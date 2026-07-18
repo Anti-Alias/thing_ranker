@@ -1,44 +1,91 @@
-import { VStack, Spinner, Grid } from "@chakra-ui/react";
+import { VStack, Spinner, Heading, HStack, createListCollection, Button, Input } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import type { Thing } from "../model/thing";
 import { fetchThingPage } from "../api";
 import { toaster } from "../components/ui/toaster";
-import ThingCard from "../components/ThingCard";
+import type { Order } from "../model/order";
+import Select from "../components/Select";
+import ItemGrid from "../components/ItemGrid";
+import SearchInput from "../components/SearchInput";
+
+type LoadingState = 'loading' | 'finished';
+
+const orderOptions = createListCollection({
+  items: [
+    { label: 'Ascending', value: 'asc' },
+    { label: 'Descending', value: 'desc' },
+  ],
+});
 
 function Things() {
 
-  const [things, setThings] = useState<Thing[] | null>(null);
-  const [_cursor, setCursor] = useState<string | null>(null);
-  const [failed, setFailed] = useState<boolean>(false);
+  const [loadingState, setLoadingState] = useState<LoadingState>('loading');
+  const [things, setThings] = useState<Thing[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [name, setName] = useState<string>('');
+  const [order, setOrder] = useState<Order>('asc');
+  const endOfData = !cursor;
 
-  // Loads things on page load
+  // Loads initial page of things
   useEffect(() => {
-    const loadThings = async () => {
+    const loadInitialPage = async () => {
       try {
-        setFailed(false);
-        const thingPage = await fetchThingPage();
-        setThings(thingPage.things);
-        setCursor(thingPage.cursor);
+        setLoadingState('loading');
+        setThings([]);
+        const firstPage = await fetchThingPage(order, name);
+        setThings(firstPage.things);
+        setCursor(firstPage.cursor);
       }
       catch (e: any) {
-        console.error('Failed to fetch things:', e);
+        console.error('Failed to fetch things on page load:', e);
         toaster.create({ description: "Failed to fetch things", type: "error" });
-        setFailed(true);
+      }
+      finally {
+        setLoadingState('finished');
       }
     };
-    loadThings();
-  }, [])
+    loadInitialPage();
+  }, [order, name])
+
+  // Loads additional page of things
+  const loadMore = async () => {
+    try {
+      setLoadingState('loading');
+      const nextPage = await fetchThingPage(order, name, cursor);
+      setThings([...things, ...nextPage.things])
+      setCursor(nextPage.cursor);
+    }
+    catch (e: any) {
+      console.error('Failed to fetch additional things:', e);
+      toaster.create({ description: "Failed to fetch things", type: "error" });
+    }
+    finally {
+      setLoadingState('finished');
+    }
+  }
 
   return (
-    <VStack align="center">
+    <VStack>
+      <Heading>Things</Heading>
+      <HStack alignSelf="start" gap={5}>
+        <HStack>
+          Name:
+          <SearchInput placeholder="Search" onSearch={value => setName(value)} />
+        </HStack>
+        <HStack>
+          Order:
+          <Select width={150} collection={orderOptions} value={[order]} onValueChange={details => setOrder(details.value[0] as Order)} />
+        </HStack>
+      </HStack>
+      {loadingState == 'finished' && things.length == 0 && <Heading>No results found</Heading>}
       {
-        things &&
-        <Grid templateColumns="repeat(5, 250px)" gap={3}>
-          {things.map((thing) => <ThingCard key={thing.id} thing={thing} />)}
-        </Grid>
+        things.length > 0 && <>
+          <ItemGrid items={things} />
+          {!endOfData && <Button onClick={loadMore}>Load More</Button>}
+        </>
       }
-      {!things && !failed && <Spinner size="xl" />}
-    </VStack>
+      {loadingState == 'loading' && <Spinner size="xl" />}
+    </VStack >
   );
 }
 
