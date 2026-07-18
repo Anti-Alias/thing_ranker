@@ -35,6 +35,8 @@ pub enum ApiError {
     AuthHeaderMissingKid,
     #[error("Auth header decoding failed: {0}")]
     AuthHeaderDecodingFailed(#[from] jsonwebtoken::errors::Error),
+    #[error("Unauthorized")]
+    Unauthorized,
     #[error("Base64 decoding failed")]
     Base64DecodingFailed,
     #[error("Jwks client failed to decode JWT: {0}")]
@@ -64,6 +66,7 @@ impl IntoResponse for ApiError {
             Self::AuthHeaderMalformed => StatusCode::BAD_REQUEST,
             Self::AuthHeaderMissingKid => StatusCode::BAD_REQUEST,
             Self::AuthHeaderDecodingFailed(_) => StatusCode::BAD_REQUEST,
+            Self::Unauthorized => StatusCode::UNAUTHORIZED,
             Self::Base64DecodingFailed => StatusCode::BAD_REQUEST,
             Self::JwksClientError(_) => StatusCode::BAD_REQUEST,
             Self::ImageProcessingError(_) => StatusCode::BAD_REQUEST,

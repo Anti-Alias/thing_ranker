@@ -1,5 +1,5 @@
 use axum::{
-    Json,
+    Extension, Json,
     body::Bytes,
     extract::{Path, Query, State},
     http::StatusCode,
@@ -12,13 +12,11 @@ use serde_with::skip_serializing_none;
 use sqlx::{PgConnection, PgTransaction, Postgres, QueryBuilder};
 
 use crate::{
+    account::AccountClaims,
     app::{ApiError, ApiResponse, AppState},
     image::process_image,
     util::{Order, decode_cursor},
 };
-
-// TODO: Remove
-const ROOT_ACCOUNT_ID: i32 = 1;
 
 const THING_PAGE_SIZE: i32 = 50;
 
@@ -130,6 +128,7 @@ pub async fn get_thing_page(
 
 pub async fn create_thing(
     State(state): State<AppState>,
+    Extension(claims): Extension<AccountClaims>,
     TypedMultipart(request): TypedMultipart<CreateThingRequest>,
 ) -> ApiResponse<Thing> {
     // Transaction start
@@ -149,7 +148,7 @@ pub async fn create_thing(
         RETURNING id,account_id,name,image,created,modified
     ";
     let thing: Thing = sqlx::query_as(query)
-        .bind(ROOT_ACCOUNT_ID)
+        .bind(claims.id)
         .bind(&request.name)
         .bind(&image_name)
         .fetch_one(conn)

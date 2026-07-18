@@ -28,7 +28,21 @@ auth:                                 # Auth token settings
 oidc:                                 # OIDC (Open ID Connect) settings
   google:                             # Google OIDC settings
     client_id: <client_id>            # Google's client ID of the app. Same value as the one in the UI project.
+roles:                                # List of roles for accounts, granted at app startup.
+  - email: root@thingranker.com
+    role: root
+  - email: admin@thingranker.com
+    role: admin 
+  - email: basic@thingranker.com
+    role: basic
 ```
+
+## Generating Test Auth Tokens
+Run the following command to generate a list of auth tokens for all accounts in the `roles` section of the config file:
+```bash
+cargo run --bin gen_auth_tokens
+```
+
 Run the following command:
 ```bash
 cargo run  # Runs API in dev mode. No optimizations.

@@ -2,6 +2,7 @@
 name = "thing_ranker"
 version = "0.1.0"
 edition = "2024"
+default-run = "thing_ranker"
 
 [dependencies]
 axum = { version = "0.8.9", features = ["macros", "multipart"] }

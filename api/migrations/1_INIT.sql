@@ -72,11 +72,3 @@ CREATE TABLE vote (
 );
 CREATE INDEX vote_created_idx ON vote(created);
 
-
--- Seeds initial data
-INSERT INTO account (role, email) VALUES ('root', 'root@root.com');
-INSERT INTO category (account_id, name) VALUES (
-  (SELECT id FROM account WHERE role='root'),
-  'Thing'
-);
-

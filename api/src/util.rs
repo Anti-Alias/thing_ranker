@@ -18,7 +18,7 @@ pub enum Order {
 }
 
 // Parses JWT portion of bearer token.
-pub fn parse_bearer_token(headers: &HeaderMap) -> Result<&str, ApiError> {
+pub fn parse_jwt(headers: &HeaderMap) -> Result<&str, ApiError> {
     // Gets auth header parts
     let Some(auth_header) = headers.get(header::AUTHORIZATION) else {
         return Err(ApiError::AuthHeaderMissing);
