@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo "Resetting DB schema"
+sudo -u postgres psql -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public" thing_ranker
+
+echo "Deleting Assets"
+rm -rf assets

@@ -18,7 +18,7 @@ use crate::{
     util::{Order, decode_cursor},
 };
 
-const THING_PAGE_SIZE: i32 = 50;
+const THING_PAGE_SIZE: i32 = 15;
 
 #[skip_serializing_none]
 #[derive(sqlx::FromRow, Serialize, Deserialize, Debug)]

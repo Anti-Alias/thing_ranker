@@ -56,9 +56,10 @@ cargo run --release # Runs API in release mode.
 SQL migrations are handled by the [SQLX](https://docs.rs/sqlx/latest/sqlx/) library.
 Migration scripts live under /api/migrations, and are run when the API starts up.
 
-## Resetting DB Schema
+## Clearing Data
 If you'd like to blow away all data in the event you need to modify a migration script you're testing,
 you can run the following command on Linux:
-```bash
-sudo -u postgres psql -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public" thing_ranker
+``:[bash](bash.md)
+scripts/clear_data
 ```
+This will also blow away all uploaded files in the `assets` directory.
