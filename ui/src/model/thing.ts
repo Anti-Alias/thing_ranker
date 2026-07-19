@@ -1,13 +1,5 @@
-export interface Thing {
-  id: number,
-  accountId: number,
-  name: string,
-  image?: string,
-  created: string,
-  modified: string,
-}
+import type { Item, ItemPage } from "./item";
 
-export interface ThingPage {
-  things: Thing[],
-  cursor: string,
-}
+export interface Thing extends Item { }
+
+export interface ThingPage extends ItemPage { }

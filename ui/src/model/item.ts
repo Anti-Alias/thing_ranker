@@ -6,3 +6,8 @@ export interface Item {
   created: string,
   modified?: string,
 }
+
+export interface ItemPage {
+  items: Item[],
+  cursor: string,
+}

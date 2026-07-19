@@ -9,7 +9,8 @@ import NotFound from "./pages/NotFound";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import RootErrorBoundary from "./components/RootErrorBoundary";
 import { GOOGLE_CLIENT_ID } from "./constants";
-import Things from "./pages/Things";
+import ThingList from "./pages/ThingList";
+import CategoryList from "./pages/CategoryList";
 
 /** All page routes in application  */
 const router = createBrowserRouter([
@@ -19,7 +20,8 @@ const router = createBrowserRouter([
     ErrorBoundary: RootErrorBoundary,
     children: [
       { index: true, Component: Home },
-      { path: '/things', Component: Things },
+      { path: '/things', Component: ThingList },
+      { path: '/categories', Component: CategoryList },
       { path: '/*', Component: NotFound },
     ],
   },
