@@ -50,9 +50,10 @@ pub fn decode_cursor(cursor: Option<String>) -> Result<Option<String>, ApiError>
     Ok(Some(name_string))
 }
 
-/// Escapes special characters in a like / ilike query
-pub fn escape_like_query(value: &str) -> String {
-    let mut result = String::new();
+/// Escapes value, and surrounds it with '%' characters.
+/// For use with "LIKE / ILIKE" operator.
+pub fn to_like_value(value: &str) -> String {
+    let mut result = String::from('%');
     for c in value.chars() {
         let is_special_char = c == '_' || c == '%' || c == '\\';
         if is_special_char {
@@ -60,5 +61,6 @@ pub fn escape_like_query(value: &str) -> String {
         }
         result.push(c);
     }
+    result.push('%');
     result
 }

@@ -15,7 +15,7 @@ use crate::{
     account::AccountClaims,
     app::{ApiError, ApiResponse, AppState},
     image::process_image,
-    util::{Order, decode_cursor, escape_like_query},
+    util::{Order, decode_cursor, to_like_value},
 };
 
 const THING_PAGE_SIZE: i32 = 15;
@@ -39,10 +39,12 @@ pub struct CreateThingRequest {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct ThingQueryParams {
     order: Option<Order>,
     cursor: Option<String>,
     name: Option<String>,
+    category_id: Option<i32>,
 }
 
 #[skip_serializing_none]
@@ -72,25 +74,34 @@ pub async fn get_thing_page(
     Query(params): Query<ThingQueryParams>,
     State(state): State<AppState>,
 ) -> ApiResponse<ThingPage> {
-    // Gets a page of things + 1 extra entry
-    let mut things = {
-        let cursor = decode_cursor(params.cursor)?;
-        let order = params.order.unwrap_or_default();
-        // Base query
-        let base_query = "SELECT id,account_id,name,image,created,modified FROM thing WHERE 1=1";
-        let mut builder = QueryBuilder::<Postgres>::new(base_query);
-        // Filter by name similarity
-        if let Some(name) = params.name {
-            let name = escape_like_query(&name);
-            if name.chars().nth(2).is_none() {
-                return Err(ApiError::QueryStringTooSmall);
-            }
-            builder
-                .push(" AND name ILIKE '%' || ")
-                .push_bind(name)
-                .push("|| '%'");
+    let mut builder = QueryBuilder::<Postgres>::default();
+    // Base query
+    {
+        if params.category_id.is_some() {
+            builder.push("SELECT t.id,t.account_id,t.name,t.image,t.created,t.modified FROM thing t INNER JOIN rank r ON t.id = r.thing_id WHERE 1=1");
+        } else {
+            builder.push("SELECT t.id,t.account_id,t.name,t.image,t.created,t.modified FROM thing t WHERE 1=1");
         }
-        // Order / page logic
+    }
+
+    // Filter by name
+    if let Some(name) = params.name {
+        let name = to_like_value(&name);
+        if name.chars().nth(2).is_none() {
+            return Err(ApiError::QueryStringTooSmall);
+        }
+        builder.push(" AND t.name ILIKE ").push_bind(name);
+    }
+
+    // Filter by category
+    if let Some(category_id) = params.category_id {
+        builder.push(" AND r.category_id = ").push_bind(category_id);
+    }
+
+    // Order by name
+    {
+        let order = params.order.unwrap_or_default();
+        let cursor = decode_cursor(params.cursor)?;
         match (cursor, order) {
             (Some(cursor), Order::Asc) => {
                 builder.push(" AND name >= ").push_bind(cursor);
@@ -107,13 +118,17 @@ pub async fn get_thing_page(
                 builder.push(" ORDER BY name DESC");
             }
         };
-        // Limit
-        builder.push(" LIMIT ").push_bind(THING_PAGE_SIZE + 1);
-        builder
-            .build_query_as::<Thing>()
-            .fetch_all(&state.pool)
-            .await?
-    };
+    }
+
+    // Limit by page size
+    builder.push(" LIMIT ").push_bind(THING_PAGE_SIZE + 1);
+
+    // Gets a page of things + 1 extra entry
+    let mut things: Vec<Thing> = builder
+        .build_query_as::<Thing>()
+        .fetch_all(&state.pool)
+        .await?;
+
     // Returns thing page, with cursor if there are more rows
     let has_more_rows = things.len() as i32 == THING_PAGE_SIZE + 1;
     let thing_page = if has_more_rows {
@@ -160,7 +175,7 @@ pub async fn create_thing(
         .asset_store
         .write("images", &image_name, &image_bytes)
         .await?;
-    Ok((StatusCode::OK, Json(thing)))
+    Ok((StatusCode::CREATED, Json(thing)))
 }
 
 async fn thing_exists(name: &str, pool: &PgPool) -> Result<bool, ApiError> {

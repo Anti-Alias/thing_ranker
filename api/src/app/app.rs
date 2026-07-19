@@ -6,7 +6,7 @@ use crate::account::{AccountRole, upsert_account};
 use crate::app::{AppStateInner, AssetStoreType, Config};
 use crate::asset::AssetStore;
 use crate::layer::auth::{authenticate, authorize_admin};
-use crate::{account, category, db, thing};
+use crate::{account, category, db, rank, thing};
 use axum::http::{HeaderValue, header};
 use axum::routing::{get, post};
 use axum::{Router, middleware};
@@ -57,6 +57,7 @@ pub async fn create_app_router(config: Config) -> Router {
     Router::new()
         .route("/api/things", post(thing::create_thing))
         .route("/api/categories", post(category::create_category))
+        .route("/api/ranks", post(rank::create_rank))
         .route_layer(admin_layer)
         .route_layer(authenticate_layer)
         .route("/api/categories", get(category::get_category_page))

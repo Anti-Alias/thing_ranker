@@ -3,12 +3,12 @@ import { fetchThingPage } from "../api";
 import ItemList from "../components/ItemList";
 
 function ThingList() {
-  return (
-    <VStack>
+  return (<>
+    <VStack align="center">
       <Heading>Things</Heading>
-      <ItemList fetchItemPage={fetchThingPage} />
     </VStack >
-  );
+    <ItemList fetchItemPage={fetchThingPage} itemHref={item => `/thing/${item.id}`} />
+  </>);
 }
 
 export default ThingList;

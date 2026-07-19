@@ -5,19 +5,19 @@ const ACCOUNT_PICTURE_NAME = "accountPicture";    // URL to picture of account h
 export type Role = 'root' | 'admin' | 'basic';
 
 export interface Account {
-  id: number,
-  role: Role,
-  email: string,
-  picture: string,
-  exp: number,
-  token: string,
+  id: number;
+  role: Role;
+  email: string;
+  picture: string;
+  exp: number;
+  token: string;
 }
 
 interface AccountClaims {
-  id: number,
-  role: Role,
-  email: string,
-  exp: number,
+  id: number;
+  role: Role;
+  email: string;
+  exp: number;
 }
 
 /** Reads account from local storage. If expired or not present, returns null. */

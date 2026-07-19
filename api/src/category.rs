@@ -15,7 +15,7 @@ use crate::{
     account::AccountClaims,
     app::{ApiError, ApiResponse, AppState},
     image::process_image,
-    util::{Order, decode_cursor, escape_like_query},
+    util::{Order, decode_cursor, to_like_value},
 };
 
 const CATEGORY_PAGE_SIZE: i32 = 15;
@@ -39,10 +39,12 @@ pub struct CreateCategoryRequest {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct CategoryQueryParams {
     order: Option<Order>,
     cursor: Option<String>,
     name: Option<String>,
+    thing_id: Option<i32>,
 }
 
 #[skip_serializing_none]
@@ -75,48 +77,61 @@ pub async fn get_category_page(
     Query(params): Query<CategoryQueryParams>,
     State(state): State<AppState>,
 ) -> ApiResponse<CategoryPage> {
-    // Gets a page of categories + 1 extra entry
-    let mut categories = {
-        let cursor = decode_cursor(params.cursor)?;
-        let order = params.order.unwrap_or_default();
-        // Base query
-        let base_query = "SELECT id,account_id,name,image,created,modified FROM category WHERE 1=1";
-        let mut builder = QueryBuilder::<Postgres>::new(base_query);
-        // Filter by name similarity
-        if let Some(name) = params.name {
-            let name = escape_like_query(&name);
-            if name.chars().nth(2).is_none() {
-                return Err(ApiError::QueryStringTooSmall);
-            }
-            builder
-                .push(" AND name ILIKE '%' || ")
-                .push_bind(name)
-                .push("|| '%'");
+    let mut builder = QueryBuilder::<Postgres>::default();
+    // Base query
+    {
+        if params.thing_id.is_some() {
+            builder.push("SELECT c.id,c.account_id,c.name,c.image,c.created,c.modified FROM category c INNER JOIN rank r ON c.id = r.category_id WHERE 1=1");
+        } else {
+            builder.push("SELECT c.id,c.account_id,c.name,c.image,c.created,c.modified FROM category c WHERE 1=1");
         }
-        // Order / page logic
+    }
+
+    // Filter by name
+    if let Some(name) = params.name {
+        let name = to_like_value(&name);
+        if name.chars().nth(2).is_none() {
+            return Err(ApiError::QueryStringTooSmall);
+        }
+        builder.push(" AND c.name ILIKE ").push_bind(name);
+    }
+
+    // Filter by thing
+    if let Some(thing_id) = params.thing_id {
+        builder.push(" AND r.thing_id = ").push_bind(thing_id);
+    }
+
+    // Order by name
+    {
+        let order = params.order.unwrap_or_default();
+        let cursor = decode_cursor(params.cursor)?;
         match (cursor, order) {
             (Some(cursor), Order::Asc) => {
-                builder.push(" AND name >= ").push_bind(cursor);
-                builder.push(" ORDER BY name ASC");
+                builder.push(" AND c.name >= ").push_bind(cursor);
+                builder.push(" ORDER BY c.name ASC");
             }
             (Some(cursor), Order::Desc) => {
-                builder.push(" AND name <= ").push_bind(cursor);
-                builder.push(" ORDER BY name DESC");
+                builder.push(" AND c.name <= ").push_bind(cursor);
+                builder.push(" ORDER BY c.name DESC");
             }
             (None, Order::Asc) => {
-                builder.push(" ORDER BY name ASC");
+                builder.push(" ORDER BY c.name ASC");
             }
             (None, Order::Desc) => {
-                builder.push(" ORDER BY name DESC");
+                builder.push(" ORDER BY c.name DESC");
             }
         };
-        // Limit
-        builder.push(" LIMIT ").push_bind(CATEGORY_PAGE_SIZE + 1);
-        builder
-            .build_query_as::<Category>()
-            .fetch_all(&state.pool)
-            .await?
-    };
+    }
+
+    // Limit by page size
+    builder.push(" LIMIT ").push_bind(CATEGORY_PAGE_SIZE + 1);
+
+    // Gets a page of categories + 1 extra entry
+    let mut categories: Vec<Category> = builder
+        .build_query_as::<Category>()
+        .fetch_all(&state.pool)
+        .await?;
+
     // Returns category page, with cursor if there are more rows
     let has_more_rows = categories.len() as i32 == CATEGORY_PAGE_SIZE + 1;
     let category_page = if has_more_rows {
@@ -163,7 +178,7 @@ pub async fn create_category(
         .asset_store
         .write("images", &image_name, &image_bytes)
         .await?;
-    Ok((StatusCode::OK, Json(category)))
+    Ok((StatusCode::CREATED, Json(category)))
 }
 async fn category_exists(name: &str, pool: &PgPool) -> Result<bool, ApiError> {
     let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM category WHERE name=$1")

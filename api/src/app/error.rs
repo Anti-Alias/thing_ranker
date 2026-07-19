@@ -19,6 +19,8 @@ pub enum ApiError {
     CategoryAlreadyExists,
     #[error("Thing already exists")]
     ThingAlreadyExists,
+    #[error("Rank already exists")]
+    RankAlreadyExists,
     #[error("Query string must be at least 3 characters")]
     QueryStringTooSmall,
     #[error("Auth header missing")]
@@ -58,6 +60,7 @@ impl IntoResponse for ApiError {
             Self::ThingNotFound => StatusCode::NOT_FOUND,
             Self::CategoryAlreadyExists => StatusCode::BAD_REQUEST,
             Self::ThingAlreadyExists => StatusCode::BAD_REQUEST,
+            Self::RankAlreadyExists => StatusCode::BAD_REQUEST,
             Self::QueryStringTooSmall => StatusCode::BAD_REQUEST,
             Self::AuthHeaderMissing => StatusCode::BAD_REQUEST,
             Self::AuthHeaderNotAString(_) => StatusCode::BAD_REQUEST,

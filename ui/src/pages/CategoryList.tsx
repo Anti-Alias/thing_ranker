@@ -7,7 +7,7 @@ function CategoryList() {
     <VStack>
       <Heading>Categories</Heading>
       <ItemList fetchItemPage={fetchCategoryPage} />
-    </VStack >
+    </VStack>
   );
 }
 

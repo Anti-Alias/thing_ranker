@@ -6,7 +6,7 @@ import { parseAccountToken, type Account } from "../model/account";
 import { fetchAccountToken } from "../api";
 
 interface SignInButtonProps {
-  setAccount: (account: Account) => void,
+  setAccount: (account: Account) => void;
 }
 
 export default function SignInButton({ setAccount }: SignInButtonProps) {

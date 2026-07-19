@@ -6,8 +6,8 @@ import type { Account } from "../model/account";
 import { CONTENT_WIDTH } from "../constants";
 
 export interface NavbarProps {
-  account: Account | null,
-  setAccount: (account: Account | null) => void,
+  account: Account | null;
+  setAccount: (account: Account | null) => void;
 }
 
 export default function Navbar({ account, setAccount }: NavbarProps) {

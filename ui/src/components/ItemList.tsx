@@ -16,11 +16,23 @@ const orderOptions = createListCollection({
   ],
 });
 
-interface ItemPageParams {
+interface ItemListPageParams {
+  /** Function that fetches item pages from API*/
   fetchItemPage: (order: Order, name?: string | null, cursor?: string | null) => Promise<ItemPage>;
+  /** What to do when an item card is clicked */
+  onItemClick?: (item: Item) => void;
+  /** Function that generates a link for each item card */
+  itemHref?: (item: Item) => string;
+  /** If hidden, does not render. This allows data fetching even when the component is not visible. */
+  hidden?: boolean;
 }
 
-function ItemList({ fetchItemPage }: ItemPageParams) {
+function ItemList({
+  fetchItemPage,
+  onItemClick,
+  itemHref,
+  hidden,
+}: ItemListPageParams) {
 
   const [loadingState, setLoadingState] = useState<LoadingState>('loading');
   const [items, setItems] = useState<Item[]>([]);
@@ -67,6 +79,7 @@ function ItemList({ fetchItemPage }: ItemPageParams) {
     }
   }
 
+  if (hidden) return;
   return (
     <VStack>
       <HStack alignSelf="start" gap={5}>
@@ -82,7 +95,7 @@ function ItemList({ fetchItemPage }: ItemPageParams) {
       {loadingState == 'finished' && items.length == 0 && <Heading>No results found</Heading>}
       {
         items.length > 0 && <>
-          <ItemGrid items={items} />
+          <ItemGrid items={items} onItemClick={onItemClick} itemHref={itemHref} />
           {!endOfData && <Button onClick={loadMore}>Load More</Button>}
         </>
       }

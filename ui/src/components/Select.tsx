@@ -13,8 +13,8 @@ interface SelectProps {
 }
 
 interface Elem {
-  value: string,
-  label: string,
+  value: string;
+  label: string;
 }
 
 /**
