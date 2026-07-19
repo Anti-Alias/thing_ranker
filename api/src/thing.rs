@@ -9,13 +9,13 @@ use base64::prelude::*;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use sqlx::{PgConnection, PgTransaction, Postgres, QueryBuilder};
+use sqlx::{PgPool, Postgres, QueryBuilder};
 
 use crate::{
     account::AccountClaims,
     app::{ApiError, ApiResponse, AppState},
     image::process_image,
-    util::{Order, decode_cursor},
+    util::{Order, decode_cursor, escape_like_query},
 };
 
 const THING_PAGE_SIZE: i32 = 15;
@@ -76,10 +76,12 @@ pub async fn get_thing_page(
     let mut things = {
         let cursor = decode_cursor(params.cursor)?;
         let order = params.order.unwrap_or_default();
+        // Base query
         let base_query = "SELECT id,account_id,name,image,created,modified FROM thing WHERE 1=1";
         let mut builder = QueryBuilder::<Postgres>::new(base_query);
         // Filter by name similarity
         if let Some(name) = params.name {
+            let name = escape_like_query(&name);
             if name.chars().nth(2).is_none() {
                 return Err(ApiError::QueryStringTooSmall);
             }
@@ -105,6 +107,7 @@ pub async fn get_thing_page(
                 builder.push(" ORDER BY name DESC");
             }
         };
+        // Limit
         builder.push(" LIMIT ").push_bind(THING_PAGE_SIZE + 1);
         builder
             .build_query_as::<Thing>()
@@ -131,13 +134,8 @@ pub async fn create_thing(
     Extension(claims): Extension<AccountClaims>,
     TypedMultipart(request): TypedMultipart<CreateThingRequest>,
 ) -> ApiResponse<Thing> {
-    // Transaction start
-    let mut tx: PgTransaction = state.pool.begin().await?;
-    let conn = &mut *tx;
-    // Processes image bytes
-    let image_bytes = process_image(&request.file.contents)?;
     // Insert thing in DB
-    if thing_exists(&request.name, conn).await? {
+    if thing_exists(&request.name, &state.pool).await? {
         return Err(ApiError::ThingAlreadyExists);
     }
     let image_name = uuid::Uuid::new_v4().to_string();
@@ -151,22 +149,21 @@ pub async fn create_thing(
         .bind(claims.id)
         .bind(&request.name)
         .bind(&image_name)
-        .fetch_one(conn)
+        .fetch_one(&state.pool)
         .await?;
     // Write image bytes to asset store
+    let image_bytes = process_image(&request.file.contents)?;
     state
         .asset_store
         .write("images", &image_name, &image_bytes)
         .await?;
-    // Transaction end
-    tx.commit().await?;
     Ok((StatusCode::OK, Json(thing)))
 }
 
-async fn thing_exists(name: &str, conn: &mut PgConnection) -> Result<bool, ApiError> {
+async fn thing_exists(name: &str, pool: &PgPool) -> Result<bool, ApiError> {
     let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM thing WHERE name=$1")
         .bind(name)
-        .fetch_one(conn)
+        .fetch_one(pool)
         .await?;
     Ok(count >= 1)
 }

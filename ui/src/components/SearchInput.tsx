@@ -36,5 +36,6 @@ export default function SearchInput({ placeholder, onSearch }: SearchInputProps)
 }
 
 function sanitizeValue(value: string): string {
-  return value.length >= 3 ? value : '';
+  const val = value.trim();
+  return val.length >= 3 ? val : '';
 }

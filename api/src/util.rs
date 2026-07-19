@@ -49,3 +49,16 @@ pub fn decode_cursor(cursor: Option<String>) -> Result<Option<String>, ApiError>
     let name_string = String::from_utf8(name_bytes).map_err(|_| ApiError::Base64DecodingFailed)?;
     Ok(Some(name_string))
 }
+
+/// Escapes special characters in a like / ilike query
+pub fn escape_like_query(value: &str) -> String {
+    let mut result = String::new();
+    for c in value.chars() {
+        let is_special_char = c == '_' || c == '%' || c == '\\';
+        if is_special_char {
+            result.push('\\');
+        }
+        result.push(c);
+    }
+    result
+}
