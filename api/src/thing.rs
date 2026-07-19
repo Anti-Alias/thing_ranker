@@ -39,7 +39,7 @@ pub struct CreateThingRequest {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct ThingQuery {
+pub struct ThingQueryParams {
     order: Option<Order>,
     cursor: Option<String>,
     name: Option<String>,
@@ -48,7 +48,7 @@ pub struct ThingQuery {
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ThingPage {
-    pub things: Vec<Thing>,
+    pub items: Vec<Thing>,
     pub cursor: Option<String>,
 }
 
@@ -69,7 +69,7 @@ pub async fn get_thing(Path(id): Path<i32>, State(state): State<AppState>) -> Ap
 }
 
 pub async fn get_thing_page(
-    Query(params): Query<ThingQuery>,
+    Query(params): Query<ThingQueryParams>,
     State(state): State<AppState>,
 ) -> ApiResponse<ThingPage> {
     // Gets a page of things + 1 extra entry
@@ -119,10 +119,13 @@ pub async fn get_thing_page(
     let thing_page = if has_more_rows {
         let last_thing = things.pop().unwrap();
         let cursor = Some(BASE64_STANDARD.encode(&last_thing.name));
-        ThingPage { things, cursor }
+        ThingPage {
+            items: things,
+            cursor,
+        }
     } else {
         ThingPage {
-            things,
+            items: things,
             cursor: None,
         }
     };

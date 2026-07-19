@@ -1,4 +1,6 @@
 import { API_BASE_URL } from "./constants";
+import type { CategoryPage } from "./model/category";
+import type { ItemPage } from "./model/item";
 import type { Order } from "./model/order";
 import type { ThingPage } from "./model/thing";
 
@@ -13,19 +15,20 @@ export async function fetchAccountToken(idpCredential: string): Promise<string> 
   }
 }
 
-export async function fetchThingPage(order: Order, name?: string | null, cursor?: string | null): Promise<ThingPage> {
-  const params = new URLSearchParams({ order });
-  if (cursor) params.append('cursor', cursor);
-  if (name) params.append('name', name);
-  const url = new URL(`${API_BASE_URL}/things`);
-  url.search = params.toString();
-  const response = await fetch(url);
-  if (response.ok) {
-    return response.json();
-  }
-  else {
-    throw new Error('Failed to fetch things due to API error response');
-  }
+export async function fetchThingPage(
+  order: Order,
+  name?: string | null,
+  cursor?: string | null,
+): Promise<ThingPage> {
+  return await fetchItemPage('things', order, name, cursor);
+}
+
+export async function fetchCategoryPage(
+  order: Order,
+  name?: string | null,
+  cursor?: string | null,
+): Promise<CategoryPage> {
+  return await fetchItemPage('categories', order, name, cursor);
 }
 
 export interface Headers {
@@ -43,3 +46,24 @@ export interface Body {
 function authHeaders(bearerToken: string): Headers {
   return { 'Authorization': `Bearer ${bearerToken}` };
 }
+
+async function fetchItemPage(
+  resource: 'things' | 'categories',
+  order: Order,
+  name?: string | null,
+  cursor?: string | null
+): Promise<ItemPage> {
+  const params = new URLSearchParams({ order });
+  if (cursor) params.append('cursor', cursor);
+  if (name) params.append('name', name);
+  const url = new URL(`${API_BASE_URL}/${resource}`);
+  url.search = params.toString();
+  const response = await fetch(url);
+  if (response.ok) {
+    return response.json();
+  }
+  else {
+    throw new Error('Failed to fetch things due to API error response');
+  }
+}
+

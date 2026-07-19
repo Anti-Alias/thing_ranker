@@ -59,6 +59,7 @@ pub async fn create_app_router(config: Config) -> Router {
         .route("/api/categories", post(category::create_category))
         .route_layer(admin_layer)
         .route_layer(authenticate_layer)
+        .route("/api/categories", get(category::get_category_page))
         .route("/api/categories/{category_id}", get(category::get_category))
         .route("/api/things", get(thing::get_thing_page))
         .route("/api/things/{thing_id}", get(thing::get_thing))
