@@ -12,6 +12,7 @@ import { GOOGLE_CLIENT_ID } from "./constants";
 import ThingList from "./pages/ThingList";
 import CategoryList from "./pages/CategoryList";
 import ThingInfo from "./pages/ThingInfo";
+import CategoryInfo from "./pages/CategoryInfo";
 
 /** All page routes in application  */
 const router = createBrowserRouter([
@@ -22,7 +23,8 @@ const router = createBrowserRouter([
     children: [
       { index: true, Component: Home },
       { path: '/things', Component: ThingList },
-      { path: '/thing/:thingId', Component: ThingInfo },
+      { path: '/things/:thingId', Component: ThingInfo },
+      { path: '/categories/:categoryId', Component: CategoryInfo },
       { path: '/categories', Component: CategoryList },
       { path: '/*', Component: NotFound },
     ],

@@ -4,9 +4,12 @@ import ItemList from "../components/ItemList";
 
 function CategoryList() {
   return (
-    <VStack>
-      <Heading>Categories</Heading>
-      <ItemList fetchItemPage={fetchCategoryPage} />
+    <VStack align="start">
+      <Heading alignSelf="center">Categories</Heading>
+      <ItemList
+        fetchItemPage={fetchCategoryPage}
+        itemHref={item => `/categories/${item.id}`}
+      />
     </VStack>
   );
 }

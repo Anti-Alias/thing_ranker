@@ -20,7 +20,7 @@ function ThingInfo() {
   const thingId = Number.parseInt(thingIdStr);
 
   // Fetches categories that contain thing
-  const fetchCategories = async (order: Order, name?: string | null, cursor?: string | null) => {
+  const fetchCategoryPage = async (order: Order, name?: string | null, cursor?: string | null) => {
     return await fetchCategoryPageForThing(thingId, order, name, cursor);
   };
 
@@ -52,7 +52,7 @@ function ThingInfo() {
       {/* Thing title and image */}
       {thing && <>
         <VStack align="center">
-          <Heading as="h1">{thing.name}</Heading>
+          <Heading as="h1">{`${thing.name} (Thing)`}</Heading>
           <Image
             width={ITEM_WIDTH}
             height={ITEM_HEIGHT}
@@ -71,7 +71,7 @@ function ThingInfo() {
         </VStack>
       }
       <ItemList
-        fetchItemPage={fetchCategories}
+        fetchItemPage={fetchCategoryPage}
         itemHref={item => `/categories/${item.id}`}
         hidden={!thing}
       />

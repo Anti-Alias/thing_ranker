@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "./constants";
-import type { CategoryPage } from "./model/category";
+import type { Category, CategoryPage } from "./model/category";
 import type { Order } from "./model/order";
 import type { Thing, ThingPage } from "./model/thing";
 
@@ -14,8 +14,8 @@ export async function fetchAccountToken(idpCredential: string): Promise<string> 
   }
 }
 
-export async function fetchThing(id: number): Promise<Thing> {
-  const response = await fetch(`${API_BASE_URL}/things/${id}`)
+export async function fetchThing(thingId: number): Promise<Thing> {
+  const response = await fetch(`${API_BASE_URL}/things/${thingId}`)
   if (response.ok) {
     return response.json();
   }
@@ -44,6 +44,37 @@ export async function fetchThingPage(
   }
 }
 
+/** Fetches a page of things for a particular category */
+export async function fetchThingPageForCategory(
+  categoryId: number,
+  order: Order,
+  name?: string | null,
+  cursor?: string | null,
+): Promise<CategoryPage> {
+  const params = new URLSearchParams({ categoryId: categoryId.toString(), order });
+  if (cursor) params.append('cursor', cursor);
+  if (name) params.append('name', name);
+  const url = new URL(`${API_BASE_URL}/things`);
+  url.search = params.toString();
+  const response = await fetch(url);
+  if (response.ok) {
+    return response.json();
+  }
+  else {
+    throw new Error('Failed to fetch things due to API error response');
+  }
+}
+
+export async function fetchCategory(categoryId: number): Promise<Category> {
+  const response = await fetch(`${API_BASE_URL}/categories/${categoryId}`)
+  if (response.ok) {
+    return response.json();
+  }
+  else {
+    throw new Error('Failed to fetch category due to API error response');
+  }
+}
+
 /** Fetches a page of categories  */
 export async function fetchCategoryPage(
   order: Order,
@@ -60,7 +91,7 @@ export async function fetchCategoryPage(
     return response.json();
   }
   else {
-    throw new Error('Failed to fetch things due to API error response');
+    throw new Error('Failed to fetch categories due to API error response');
   }
 }
 
@@ -81,7 +112,7 @@ export async function fetchCategoryPageForThing(
     return response.json();
   }
   else {
-    throw new Error('Failed to fetch things due to API error response');
+    throw new Error('Failed to fetch categories due to API error response');
   }
 }
 
