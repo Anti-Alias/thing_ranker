@@ -1,5 +1,6 @@
 use axum::http::StatusCode;
 use axum::{extract::State, http::HeaderMap};
+use bitflags::bitflags;
 use chrono::Utc;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::{Deserialize, Serialize};
@@ -22,9 +23,9 @@ pub struct Account {
     pub email: String,
 }
 
-/// Roles to give to specific accounts during startup
+/// Preconfigured settings for an account.
 #[derive(Serialize, Deserialize, FromRow, Clone, Debug)]
-pub struct AccountRole {
+pub struct AccountSettings {
     pub role: Role,
     pub email: String,
 }
@@ -46,6 +47,32 @@ pub enum Role {
     Admin,
     #[default]
     Basic,
+}
+
+impl Role {
+    pub fn permissions(self) -> Permissions {
+        match self {
+            Role::Root => Role::Admin.permissions() | Permissions::CAN_ALTER_ACCOUNTS,
+            Role::Admin => {
+                Role::Basic.permissions()
+                    | Permissions::CAN_ALTER_THINGS
+                    | Permissions::CAN_ALTER_ALTER_CATEGORIES
+                    | Permissions::CAN_ALTER_RANKS
+            }
+            Role::Basic => Permissions::CAN_VOTE,
+        }
+    }
+}
+
+bitflags! {
+    #[derive(Copy, Clone, Eq, PartialEq, Debug)]
+    pub struct Permissions: u8 {
+        const CAN_VOTE                      = 0b00000001;
+        const CAN_ALTER_THINGS              = 0b00000010;
+        const CAN_ALTER_ALTER_CATEGORIES    = 0b00000100;
+        const CAN_ALTER_RANKS               = 0b00001000;
+        const CAN_ALTER_ACCOUNTS            = 0b00010000;
+    }
 }
 
 /// Exchanges an IDP token for an API token
@@ -85,6 +112,15 @@ pub async fn create_login_token(
     Ok(account_jwt)
 }
 
+pub async fn upsert_accounts(account_settings: &[AccountSettings], pool: &PgPool) {
+    log::info!("Applying account settings");
+    for settings in account_settings {
+        upsert_account(&settings.email, settings.role, pool)
+            .await
+            .unwrap();
+    }
+}
+
 /// Either inserts a new account, or updates an existing account.
 /// Returns account.
 pub async fn upsert_account(email: &str, role: Role, pool: &PgPool) -> Result<Account, ApiError> {
@@ -98,6 +134,15 @@ pub async fn upsert_account(email: &str, role: Role, pool: &PgPool) -> Result<Ac
         None => create_account(email, role, pool).await?,
     };
     Ok(account_id)
+}
+
+pub async fn get_account_by_email(email: &str, pool: &PgPool) -> Result<Option<Account>, ApiError> {
+    let query = "SELECT id,role,email FROM account WHERE email=$1";
+    let account: Option<Account> = sqlx::query_as(query)
+        .bind(email)
+        .fetch_optional(pool)
+        .await?;
+    Ok(account)
 }
 
 async fn create_account(email: &str, role: Role, pool: &PgPool) -> Result<Account, ApiError> {

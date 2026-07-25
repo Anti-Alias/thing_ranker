@@ -28,7 +28,7 @@ auth:                                 # Auth token settings
 oidc:                                 # OIDC (Open ID Connect) settings
   google:                             # Google OIDC settings
     client_id: <client_id>            # Google's client ID of the app. Same value as the one in the UI project.
-roles:                                # List of roles for accounts, granted at app startup.
+account_settings:                     # Pre-configured settings for specific accounts. Useful for testing purposes.
   - email: root@thingranker.com
     role: root
   - email: admin@thingranker.com
@@ -40,7 +40,7 @@ roles:                                # List of roles for accounts, granted at a
 ## Generating Test Auth Tokens
 Run the following command to generate a list of auth tokens for all accounts in the `roles` section of the config file:
 ```bash
-cargo run --bin gen_auth_tokens
+cargo run --bin login
 ```
 
 Run the following command:
@@ -55,6 +55,16 @@ cargo run --release # Runs API in release mode.
 ## DB Migrations
 SQL migrations are handled by the [SQLX](https://docs.rs/sqlx/latest/sqlx/) library.
 Migration scripts live under /api/migrations, and are run when the API starts up.
+
+## Seeding Data
+Test data can be seeded by running the binary target `seed`.
+This will upload both things and categories to the site, using data in the `/seed` directory.
+```bash
+# Generic example
+cargo run --bin seed -- --email <account_email>
+# Concrete example
+cargo run --bin seed -- --email root@thingranker.com
+```
 
 ## Clearing Data
 If you'd like to blow away all data in the event you need to modify a migration script you're testing,

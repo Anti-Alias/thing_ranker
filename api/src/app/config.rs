@@ -1,12 +1,13 @@
 use config::File;
 use serde::Deserialize;
 
-use crate::account::AccountRole;
+use crate::account::AccountSettings;
 
 const CONFIG_PATH: &str = "config.yml";
 
-/// Application configuration
-#[derive(Deserialize, Debug)]
+/// Application configuration.
+/// Read from config.yml file(s).
+#[derive(Deserialize, Clone, Debug)]
 pub struct Config {
     pub port: u32,
     pub asset_store_type: AssetStoreType,
@@ -14,10 +15,10 @@ pub struct Config {
     pub cors: CorsConfig,
     pub auth: AuthConfig,
     pub oidc: OIDCConfig,
-    pub roles: Vec<AccountRole>,
+    pub account_settings: Vec<AccountSettings>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Copy, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum AssetStoreType {
     Local,
@@ -25,7 +26,7 @@ pub enum AssetStoreType {
 }
 
 /// Config values for database connectivity
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct DbConfig {
     pub name: String,
     pub user: String,
@@ -35,13 +36,13 @@ pub struct DbConfig {
 }
 
 /// Config values for CORS
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct CorsConfig {
     pub allowed_origin: String,
 }
 
 /// Config values for authenticating accounts
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct AuthConfig {
     /// Secret used to sign and validate JWTs
     pub jwt_secret: String,
@@ -50,12 +51,12 @@ pub struct AuthConfig {
 }
 
 /// Config values for dealing with identity providers through the OIDC protocol
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct OIDCConfig {
     pub google: GoogleConfig,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct GoogleConfig {
     pub client_id: String,
 }

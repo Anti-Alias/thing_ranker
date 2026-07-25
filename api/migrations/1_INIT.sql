@@ -50,6 +50,7 @@ CREATE INDEX category_name_trgm_idx ON category USING GIST(name gist_trgm_ops);
 CREATE TABLE rank (
   thing_id integer NOT NULL REFERENCES thing(id),
   category_id integer NOT NULL REFERENCES thing(id),
+  account_id integer NOT NULL REFERENCES account(id),
   wins integer NOT NULL DEFAULT 0,
   losses integer NOT NULL DEFAULT 0,
   win_loss_ratio float8 NOT NULL DEFAULT 0,

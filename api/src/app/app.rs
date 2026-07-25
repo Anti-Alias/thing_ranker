@@ -2,8 +2,8 @@
 
 use std::sync::Arc;
 
-use crate::account::{AccountRole, upsert_account};
-use crate::app::{AppStateInner, AssetStoreType, Config};
+use crate::account::upsert_accounts;
+use crate::app::{AppState, AppStateInner, AssetStoreType, Config};
 use crate::asset::AssetStore;
 use crate::layer::auth::{authenticate, authorize_admin};
 use crate::{account, category, db, rank, thing};
@@ -13,7 +13,6 @@ use axum::{Router, middleware};
 use jwks_client_rs::JwksClient;
 use jwks_client_rs::source::WebSource;
 use reqwest::Url;
-use sqlx::PgPool;
 use tower_http::cors::{AllowHeaders, AllowMethods, CorsLayer};
 use tower_http::services::ServeDir;
 
@@ -21,28 +20,8 @@ const GOOGLE_JWKS_URL: &str = "https://www.googleapis.com/oauth2/v3/certs";
 
 /// Creates the application router with a given configuration
 pub async fn create_app_router(config: Config) -> Router {
-    // Connects to database and runs migrations
-    log::info!("Connecting to DB");
-    let pool = db::create_pool(&config.db).await;
-    log::info!("Running DB migrations");
-    db::MIGRATOR.run(&pool).await.unwrap();
-    // Upserts accounts from config
-    log::info!("Upserting accounts");
-    apply_account_roles(&config.roles, &pool).await;
-    // Sets up JWKS client for token validation
-    let jwks_client = create_jwks_client();
-    let asset_store = match config.asset_store_type {
-        AssetStoreType::Local => AssetStore::local(),
-        AssetStoreType::S3 => AssetStore::s3(),
-    };
-    // Sets up app state
-    let state = Arc::new(AppStateInner {
-        pool,
-        jwks_client,
-        auth_config: config.auth,
-        oidc_config: config.oidc,
-        asset_store,
-    });
+    // Initializes app
+    let state = init_app(&config).await;
     // Sets up auth layers
     let authenticate_layer = middleware::from_fn_with_state(state.clone(), authenticate);
     let admin_layer = middleware::from_fn(authorize_admin);
@@ -71,12 +50,25 @@ pub async fn create_app_router(config: Config) -> Router {
         .with_state(state)
 }
 
-pub async fn apply_account_roles(account_roles: &[AccountRole], pool: &PgPool) {
-    for account_role in account_roles {
-        upsert_account(&account_role.email, account_role.role, pool)
-            .await
-            .unwrap();
-    }
+/// Initializes the app, and returns an [AppState](AppState) instance.
+/// Behind the scenes, this initializes the app by running DB migrations,
+/// and creating / updating accounts specified in the config.
+pub async fn init_app(config: &Config) -> AppState {
+    log::info!("Connecting to DB");
+    let pool = db::create_pool(&config.db, true).await;
+    upsert_accounts(&config.account_settings, &pool).await;
+    let jwks_client = create_jwks_client();
+    let asset_store = match config.asset_store_type {
+        AssetStoreType::Local => AssetStore::local(),
+        AssetStoreType::S3 => AssetStore::s3(),
+    };
+    Arc::new(AppStateInner {
+        pool,
+        jwks_client,
+        auth_config: config.auth.clone(),
+        oidc_config: config.oidc.clone(),
+        asset_store,
+    })
 }
 
 fn create_jwks_client() -> JwksClient<WebSource> {

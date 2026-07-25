@@ -152,8 +152,19 @@ pub async fn create_thing(
     Extension(claims): Extension<AccountClaims>,
     TypedMultipart(request): TypedMultipart<CreateThingRequest>,
 ) -> ApiResponse<Thing> {
+    let thing =
+        create_thing_inner(&state, claims.id, &request.name, &request.file.contents).await?;
+    Ok((StatusCode::CREATED, Json(thing)))
+}
+
+pub async fn create_thing_inner(
+    state: &AppState,
+    account_id: i32,
+    thing_name: &str,
+    thing_bytes: &[u8],
+) -> Result<Thing, ApiError> {
     // Insert thing in DB
-    if thing_exists(&request.name, &state.pool).await? {
+    if thing_exists(thing_name, &state.pool).await? {
         return Err(ApiError::ThingAlreadyExists);
     }
     let image_name = uuid::Uuid::new_v4().to_string();
@@ -164,18 +175,18 @@ pub async fn create_thing(
         RETURNING id,account_id,name,image,created,modified
     ";
     let thing: Thing = sqlx::query_as(query)
-        .bind(claims.id)
-        .bind(&request.name)
+        .bind(account_id)
+        .bind(&thing_name)
         .bind(&image_name)
         .fetch_one(&state.pool)
         .await?;
     // Write image bytes to asset store
-    let image_bytes = process_image(&request.file.contents)?;
+    let image_bytes = process_image(thing_bytes)?;
     state
         .asset_store
         .write("images", &image_name, &image_bytes)
         .await?;
-    Ok((StatusCode::CREATED, Json(thing)))
+    Ok(thing)
 }
 
 async fn thing_exists(name: &str, pool: &PgPool) -> Result<bool, ApiError> {

@@ -3,7 +3,9 @@ use sqlx::{Pool, Postgres, migrate::Migrator, postgres::PgPoolOptions};
 
 pub static MIGRATOR: Migrator = sqlx::migrate!();
 
-pub async fn create_pool(config: &app::DbConfig) -> Pool<Postgres> {
+/// Creates a database connection pool.
+/// Runs migrations if configured.
+pub async fn create_pool(config: &app::DbConfig, migrate: bool) -> Pool<Postgres> {
     let DbConfig {
         name,
         user,
@@ -12,9 +14,14 @@ pub async fn create_pool(config: &app::DbConfig) -> Pool<Postgres> {
         port,
     } = config;
     let url = format!("postgresql://{user}:{password}@{host}:{port}/{name}");
-    PgPoolOptions::new()
+    let pool = PgPoolOptions::new()
         .max_connections(64)
         .connect(&url)
         .await
-        .unwrap()
+        .unwrap();
+    if migrate {
+        log::info!("Running DB migrations");
+        MIGRATOR.run(&pool).await.unwrap();
+    }
+    pool
 }

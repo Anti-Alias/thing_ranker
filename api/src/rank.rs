@@ -1,9 +1,12 @@
-use axum::{Json, extract::State};
+use axum::{Extension, Json, extract::State};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, prelude::FromRow};
 
-use crate::app::{ApiError, ApiResponse, AppState};
+use crate::{
+    account::AccountClaims,
+    app::{ApiError, ApiResponse, AppState},
+};
 
 #[derive(Serialize, Deserialize, FromRow)]
 pub struct Rank {
@@ -24,27 +27,39 @@ pub struct CreateRankRequest {
 /// Adds a rank, which connects a thing to a category
 pub async fn create_rank(
     State(state): State<AppState>,
+    Extension(claims): Extension<AccountClaims>,
     Json(request): Json<CreateRankRequest>,
 ) -> ApiResponse<Rank> {
-    if !thing_exists(request.thing_id, &state.pool).await? {
+    let rank = create_rank_inner(&state, claims.id, request.thing_id, request.category_id).await?;
+    Ok((StatusCode::CREATED, Json(rank)))
+}
+
+pub async fn create_rank_inner(
+    state: &AppState,
+    account_id: i32,
+    thing_id: i32,
+    category_id: i32,
+) -> Result<Rank, ApiError> {
+    if !thing_exists(thing_id, &state.pool).await? {
         return Err(ApiError::ThingNotFound);
     }
-    if !category_exists(request.category_id, &state.pool).await? {
+    if !category_exists(category_id, &state.pool).await? {
         return Err(ApiError::CategoryNotFound);
     }
-    if rank_exists(request.thing_id, request.category_id, &state.pool).await? {
+    if rank_exists(thing_id, category_id, &state.pool).await? {
         return Err(ApiError::RankAlreadyExists);
     }
     let query = "
-        INSERT INTO rank (thing_id,category_id) VALUES ($1,$2)
+        INSERT INTO rank (thing_id,category_id,account_id) VALUES ($1,$2,$3)
         RETURNING thing_id,category_id,wins,losses,win_loss_ratio
     ";
     let rank: Rank = sqlx::query_as(query)
-        .bind(request.thing_id)
-        .bind(request.category_id)
+        .bind(thing_id)
+        .bind(category_id)
+        .bind(account_id)
         .fetch_one(&state.pool)
         .await?;
-    Ok((StatusCode::CREATED, Json(rank)))
+    Ok(rank)
 }
 
 async fn thing_exists(thing_id: i32, pool: &PgPool) -> Result<bool, ApiError> {

@@ -180,6 +180,39 @@ pub async fn create_category(
         .await?;
     Ok((StatusCode::CREATED, Json(category)))
 }
+
+pub async fn create_category_inner(
+    state: &AppState,
+    account_id: i32,
+    category_name: &str,
+    category_bytes: &[u8],
+) -> Result<Category, ApiError> {
+    // Insert category in DB
+    if category_exists(&category_name, &state.pool).await? {
+        return Err(ApiError::CategoryAlreadyExists);
+    }
+    let image_name = uuid::Uuid::new_v4().to_string();
+    let image_name = format!("{image_name}.webp");
+    let query = "
+        INSERT INTO category (account_id, name, image)
+        VALUES ($1, $2, $3)
+        RETURNING id,account_id,name,image,created,modified
+    ";
+    let category: Category = sqlx::query_as(query)
+        .bind(account_id)
+        .bind(&category_name)
+        .bind(&image_name)
+        .fetch_one(&state.pool)
+        .await?;
+    // Write image bytes to asset store
+    let image_bytes = process_image(&category_bytes)?;
+    state
+        .asset_store
+        .write("images", &image_name, &image_bytes)
+        .await?;
+    Ok(category)
+}
+
 async fn category_exists(name: &str, pool: &PgPool) -> Result<bool, ApiError> {
     let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM category WHERE name=$1")
         .bind(name)
