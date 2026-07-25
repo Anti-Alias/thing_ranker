@@ -4,13 +4,13 @@ import ItemList from "../components/ItemList";
 
 function ThingList() {
   return (
-    <VStack>
+    <VStack alignItems="stretch">
       <Heading alignSelf="center">Things</Heading>
       <ItemList
         fetchItemPage={fetchThingPage}
         itemHref={item => `/things/${item.id}`}
       />
-    </VStack >
+    </VStack>
   );
 }
 

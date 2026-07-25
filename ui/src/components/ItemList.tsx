@@ -1,4 +1,4 @@
-import { VStack, Spinner, Heading, HStack, createListCollection, Button } from "@chakra-ui/react";
+import { VStack, Spinner, HStack, createListCollection, Button, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import type { Item, ItemPage } from "../model/item";
 import { toaster } from "./ui/toaster";
@@ -47,11 +47,11 @@ function ItemList({
     const loadInitialPage = async () => {
       try {
         setLoadingState('loading');
-        setItems([]);
         const firstPage = await fetchItemPage(order, name);
+        const hasMorePages = !!firstPage.cursor;
         setItems(firstPage.items);
         setCursor(firstPage.cursor);
-        setHideSearch(!firstPage.cursor);
+        setHideSearch(name === '' && !hasMorePages);
       }
       catch (e: any) {
         console.error('Failed to fetch items on page load:', e);
@@ -82,28 +82,44 @@ function ItemList({
   }
 
   if (hidden) return;
-  return (<VStack>
-    {!hideSearch &&
-      <HStack alignSelf="start" gap={5}>
-        <HStack>
-          Name:
-          <SearchInput placeholder="Search" onSearch={value => setName(value)} />
+  return (
+    <VStack align="stretch">
+      {
+        // Search bar
+        !hideSearch &&
+        <HStack alignSelf="start" gap={5}>
+          <HStack>
+            <SearchInput placeholder="Search" onSearch={value => setName(value)} />
+          </HStack>
+          <HStack>
+            Order:
+            <Select width={150} collection={orderOptions} value={[order]} onValueChange={details => setOrder(details.value[0] as Order)} />
+          </HStack>
         </HStack>
-        <HStack>
-          Order:
-          <Select width={150} collection={orderOptions} value={[order]} onValueChange={details => setOrder(details.value[0] as Order)} />
-        </HStack>
-      </HStack>
-    }
-    {loadingState == 'finished' && items.length == 0 && <Heading>No results found</Heading>}
-    {
-      items.length > 0 && <>
-        <ItemListContent items={items} onItemClick={onItemClick} itemHref={itemHref} />
-        {!endOfData && <Button onClick={loadMore}>Load More</Button>}
-      </>
-    }
-    {loadingState == 'loading' && <Spinner alignSelf="center" size="xl" />}
-  </VStack>);
+      }
+      {
+        // Heading
+        loadingState == 'finished' && items.length == 0 &&
+        <Text>No results found</Text>
+      }
+      {
+        // Item list
+        items.length != 0 && <>
+          <ItemListContent items={items} onItemClick={onItemClick} itemHref={itemHref} />
+        </>
+      }
+      {
+        // Load more button
+        items.length != 0 && !endOfData &&
+        <Button alignSelf="center" onClick={loadMore}>Load More</Button>
+      }
+      {
+        // Spinner
+        loadingState == 'loading' &&
+        <Spinner size="xl" alignSelf="center" />
+      }
+    </VStack>
+  );
 }
 
 export default ItemList;

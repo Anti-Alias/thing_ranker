@@ -4,7 +4,7 @@ import ItemList from "../components/ItemList";
 
 function CategoryList() {
   return (
-    <VStack>
+    <VStack alignItems="stretch">
       <Heading alignSelf="center">Categories</Heading>
       <ItemList
         fetchItemPage={fetchCategoryPage}

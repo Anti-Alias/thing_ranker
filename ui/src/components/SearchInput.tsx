@@ -1,5 +1,6 @@
-import { Input } from "@chakra-ui/react";
+import { Input, InputGroup } from "@chakra-ui/react";
 import { useRef, useState } from "react";
+import { LuSearch } from "react-icons/lu";
 
 const SEARCH_DELAY_MS = 500;
 
@@ -27,11 +28,13 @@ export default function SearchInput({ placeholder, onSearch }: SearchInputProps)
   };
 
   return (
-    <Input
-      placeholder={placeholder}
-      value={value}
-      onChange={e => handleValueChange(e.target.value)}
-    />
+    <InputGroup startElement={<LuSearch />}>
+      <Input
+        placeholder={placeholder}
+        value={value}
+        onChange={e => handleValueChange(e.target.value)}
+      />
+    </ InputGroup>
   );
 }
 

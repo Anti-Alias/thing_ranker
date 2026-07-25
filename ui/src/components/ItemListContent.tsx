@@ -13,7 +13,7 @@ interface ItemListContentProps {
 function ItemListContent({ items, onItemClick, itemHref }: ItemListContentProps) {
 
   return (
-    <Wrap alignItems="start" gap={3}>
+    <Wrap borderRadius="md" borderWidth="1px" padding={3} alignItems="start" gap={3}>
       {items.map(item => {
         if (onItemClick) {
           return <ItemCard

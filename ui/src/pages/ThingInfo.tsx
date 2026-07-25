@@ -1,4 +1,4 @@
-import { VStack, Heading, Spinner, Image, Separator } from "@chakra-ui/react";
+import { VStack, Heading, Spinner, Image } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import type { Thing } from "../model/thing";
@@ -60,7 +60,6 @@ function ThingInfo() {
             alt={thing.name}
           />
         </VStack>
-        <Separator />
       </>
       }
 
