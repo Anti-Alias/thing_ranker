@@ -37,7 +37,7 @@ function ItemList({
   const [loadingState, setLoadingState] = useState<LoadingState>('loading');
   const [items, setItems] = useState<Item[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
-  const [name, setName] = useState<string>('');
+  const [search, setSearch] = useState<string>('');
   const [order, setOrder] = useState<Order>('asc');
   const [hideSearch, setHideSearch] = useState<boolean>(true);
   const endOfData = !cursor;
@@ -47,11 +47,12 @@ function ItemList({
     const loadInitialPage = async () => {
       try {
         setLoadingState('loading');
-        const firstPage = await fetchItemPage(order, name);
+        const firstPage = await fetchItemPage(order, search);
         const hasMorePages = !!firstPage.cursor;
+        const isSearchEmpty = search.length == 0;
         setItems(firstPage.items);
         setCursor(firstPage.cursor);
-        setHideSearch(name === '' && !hasMorePages);
+        setHideSearch(isSearchEmpty && !hasMorePages);
       }
       catch (e: any) {
         console.error('Failed to fetch items on page load:', e);
@@ -62,13 +63,13 @@ function ItemList({
       }
     };
     loadInitialPage();
-  }, [order, name])
+  }, [order, search])
 
   // Loads additional page of items
-  const loadMore = async () => {
+  const loadAdditionalPage = async () => {
     try {
       setLoadingState('loading');
-      const nextPage = await fetchItemPage(order, name, cursor);
+      const nextPage = await fetchItemPage(order, search, cursor);
       setItems([...items, ...nextPage.items])
       setCursor(nextPage.cursor);
     }
@@ -89,7 +90,7 @@ function ItemList({
         !hideSearch &&
         <HStack alignSelf="start" gap={5}>
           <HStack>
-            <SearchInput placeholder="Search" onSearch={value => setName(value)} />
+            <SearchInput placeholder="Search" onSearch={value => setSearch(value)} />
           </HStack>
           <HStack>
             Order:
@@ -111,7 +112,7 @@ function ItemList({
       {
         // Load more button
         items.length != 0 && !endOfData &&
-        <Button alignSelf="center" onClick={loadMore}>Load More</Button>
+        <Button alignSelf="center" onClick={loadAdditionalPage}>Load More</Button>
       }
       {
         // Spinner
