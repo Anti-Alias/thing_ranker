@@ -4,7 +4,7 @@ import type { Item, ItemPage } from "../model/item";
 import { toaster } from "./ui/toaster";
 import type { Order } from "../model/order";
 import Select from "./Select";
-import ItemGrid from "./ItemGrid";
+import ItemListContent from "./ItemListContent";
 import SearchInput from "./SearchInput";
 
 type LoadingState = 'loading' | 'finished';
@@ -39,6 +39,7 @@ function ItemList({
   const [cursor, setCursor] = useState<string | null>(null);
   const [name, setName] = useState<string>('');
   const [order, setOrder] = useState<Order>('asc');
+  const [hideSearch, setHideSearch] = useState<boolean>(true);
   const endOfData = !cursor;
 
   // Loads initial page of items
@@ -50,6 +51,7 @@ function ItemList({
         const firstPage = await fetchItemPage(order, name);
         setItems(firstPage.items);
         setCursor(firstPage.cursor);
+        setHideSearch(!firstPage.cursor);
       }
       catch (e: any) {
         console.error('Failed to fetch items on page load:', e);
@@ -80,8 +82,8 @@ function ItemList({
   }
 
   if (hidden) return;
-  return (
-    <VStack>
+  return (<VStack>
+    {!hideSearch &&
       <HStack alignSelf="start" gap={5}>
         <HStack>
           Name:
@@ -92,16 +94,16 @@ function ItemList({
           <Select width={150} collection={orderOptions} value={[order]} onValueChange={details => setOrder(details.value[0] as Order)} />
         </HStack>
       </HStack>
-      {loadingState == 'finished' && items.length == 0 && <Heading>No results found</Heading>}
-      {
-        items.length > 0 && <>
-          <ItemGrid items={items} onItemClick={onItemClick} itemHref={itemHref} />
-          {!endOfData && <Button onClick={loadMore}>Load More</Button>}
-        </>
-      }
-      {loadingState == 'loading' && <Spinner size="xl" />}
-    </VStack >
-  );
+    }
+    {loadingState == 'finished' && items.length == 0 && <Heading>No results found</Heading>}
+    {
+      items.length > 0 && <>
+        <ItemListContent items={items} onItemClick={onItemClick} itemHref={itemHref} />
+        {!endOfData && <Button onClick={loadMore}>Load More</Button>}
+      </>
+    }
+    {loadingState == 'loading' && <Spinner alignSelf="center" size="xl" />}
+  </VStack>);
 }
 
 export default ItemList;

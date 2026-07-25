@@ -1,19 +1,19 @@
-import { Grid } from "@chakra-ui/react"
+import { Wrap } from "@chakra-ui/react"
 import type { Item } from "../model/item"
 import ItemCard from "./ItemCard";
 import { ASSET_BASE_URL } from "../constants";
 import { memo } from "react";
 
-interface ItemGridProps {
+interface ItemListContentProps {
   items: Item[];
   onItemClick?: (item: Item) => void;
   itemHref?: (item: Item) => string;
 }
 
-function ItemGrid({ items, onItemClick, itemHref }: ItemGridProps) {
+function ItemListContent({ items, onItemClick, itemHref }: ItemListContentProps) {
 
   return (
-    <Grid templateColumns="repeat(5, 250px)" gap={3}>
+    <Wrap alignItems="start" gap={3}>
       {items.map(item => {
         if (onItemClick) {
           return <ItemCard
@@ -39,8 +39,8 @@ function ItemGrid({ items, onItemClick, itemHref }: ItemGridProps) {
           />
         }
       })}
-    </Grid>
+    </Wrap>
   );
 }
 
-export default memo(ItemGrid);
+export default memo(ItemListContent);

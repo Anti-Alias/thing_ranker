@@ -38,7 +38,7 @@ const root = document.getElementById("root")!;
 createRoot(root).render(
   <CustomChakraProvider>
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <RouterProvider router={router} />,
+      <RouterProvider router={router} />
     </GoogleOAuthProvider>
   </CustomChakraProvider>
 );

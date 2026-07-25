@@ -22,7 +22,7 @@ export default function App() {
   const pageProps: PageProps = { account };
 
   return (
-    <Box>
+    <Box marginBottom={2}>
       <Toaster />
       <VStack align="center">
         <Navbar account={account} setAccount={setAccount} />
