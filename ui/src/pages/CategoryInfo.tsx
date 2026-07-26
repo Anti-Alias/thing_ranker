@@ -66,7 +66,7 @@ function CategoryInfo() {
       {/* Things of category */}
       {category &&
         <VStack align="center">
-          <Heading as="h2">Things</Heading>
+          <Heading alignSelf="start" as="h2">Things</Heading>
         </VStack>
       }
       <ItemList
