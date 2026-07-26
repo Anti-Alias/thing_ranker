@@ -25,8 +25,13 @@ function CategoryInfo() {
   const categoryId = Number.parseInt(categoryIdStr);
 
   // Fetches things that contain category
-  const fetchThingPage = async (order: Order, name?: string | null, cursor?: string | null) => {
-    return await fetchThingPageForCategory(categoryId, order, name, cursor);
+  const fetchThingPage = async (
+    pageSize?: number | null,
+    order?: Order | null,
+    name?: string | null,
+    cursor?: string | null,
+  ) => {
+    return await fetchThingPageForCategory(categoryId, pageSize, order, name, cursor);
   };
 
   // Loads category on page load

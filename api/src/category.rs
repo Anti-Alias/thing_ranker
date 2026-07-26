@@ -1,3 +1,5 @@
+use std::num::NonZeroI32;
+
 use axum::{
     Extension, Json,
     body::Bytes,
@@ -15,10 +17,8 @@ use crate::{
     account::AccountClaims,
     app::{ApiError, ApiResponse, AppState},
     image::process_image,
-    util::{Order, decode_cursor, to_like_value},
+    util::{DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, Order, decode_cursor, to_like_value},
 };
-
-const CATEGORY_PAGE_SIZE: i32 = 15;
 
 #[skip_serializing_none]
 #[derive(sqlx::FromRow, Serialize, Deserialize, Debug)]
@@ -45,6 +45,7 @@ pub struct CategoryQueryParams {
     cursor: Option<String>,
     name: Option<String>,
     thing_id: Option<i32>,
+    page_size: Option<NonZeroI32>,
 }
 
 #[skip_serializing_none]
@@ -77,6 +78,11 @@ pub async fn get_category_page(
     Query(params): Query<CategoryQueryParams>,
     State(state): State<AppState>,
 ) -> ApiResponse<CategoryPage> {
+    let page_size = params
+        .page_size
+        .map(|s| s.get())
+        .unwrap_or(DEFAULT_PAGE_SIZE)
+        .min(MAX_PAGE_SIZE);
     let mut builder = QueryBuilder::<Postgres>::default();
     // Base query
     {
@@ -124,7 +130,7 @@ pub async fn get_category_page(
     }
 
     // Limit by page size
-    builder.push(" LIMIT ").push_bind(CATEGORY_PAGE_SIZE + 1);
+    builder.push(" LIMIT ").push_bind(page_size + 1);
 
     // Gets a page of categories + 1 extra entry
     let mut categories: Vec<Category> = builder
@@ -133,7 +139,7 @@ pub async fn get_category_page(
         .await?;
 
     // Returns category page, with cursor if there are more rows
-    let has_more_rows = categories.len() as i32 == CATEGORY_PAGE_SIZE + 1;
+    let has_more_rows = categories.len() as i32 == page_size + 1;
     let category_page = if has_more_rows {
         let last_category = categories.pop().unwrap();
         let cursor = Some(BASE64_STANDARD.encode(&last_category.name));
@@ -147,7 +153,7 @@ pub async fn get_category_page(
             cursor: None,
         }
     };
-    return Ok((StatusCode::OK, Json(category_page)));
+    Ok((StatusCode::OK, Json(category_page)))
 }
 
 pub async fn create_category(
@@ -188,7 +194,7 @@ pub async fn create_category_inner(
     category_bytes: &[u8],
 ) -> Result<Category, ApiError> {
     // Insert category in DB
-    if category_exists(&category_name, &state.pool).await? {
+    if category_exists(category_name, &state.pool).await? {
         return Err(ApiError::CategoryAlreadyExists);
     }
     let image_name = uuid::Uuid::new_v4().to_string();
@@ -200,12 +206,12 @@ pub async fn create_category_inner(
     ";
     let category: Category = sqlx::query_as(query)
         .bind(account_id)
-        .bind(&category_name)
+        .bind(category_name)
         .bind(&image_name)
         .fetch_one(&state.pool)
         .await?;
     // Write image bytes to asset store
-    let image_bytes = process_image(&category_bytes)?;
+    let image_bytes = process_image(category_bytes)?;
     state
         .asset_store
         .write("images", &image_name, &image_bytes)

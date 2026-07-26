@@ -1,3 +1,5 @@
+use std::num::NonZeroI32;
+
 use axum::{
     Extension, Json,
     body::Bytes,
@@ -15,10 +17,8 @@ use crate::{
     account::AccountClaims,
     app::{ApiError, ApiResponse, AppState},
     image::process_image,
-    util::{Order, decode_cursor, to_like_value},
+    util::{DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, Order, decode_cursor, to_like_value},
 };
-
-const THING_PAGE_SIZE: i32 = 15;
 
 #[skip_serializing_none]
 #[derive(sqlx::FromRow, Serialize, Deserialize, Debug)]
@@ -45,6 +45,7 @@ pub struct ThingQueryParams {
     cursor: Option<String>,
     name: Option<String>,
     category_id: Option<i32>,
+    page_size: Option<NonZeroI32>,
 }
 
 #[skip_serializing_none]
@@ -74,6 +75,11 @@ pub async fn get_thing_page(
     Query(params): Query<ThingQueryParams>,
     State(state): State<AppState>,
 ) -> ApiResponse<ThingPage> {
+    let page_size = params
+        .page_size
+        .map(|s| s.get())
+        .unwrap_or(DEFAULT_PAGE_SIZE)
+        .min(MAX_PAGE_SIZE);
     let mut builder = QueryBuilder::<Postgres>::default();
     // Base query
     {
@@ -121,7 +127,7 @@ pub async fn get_thing_page(
     }
 
     // Limit by page size
-    builder.push(" LIMIT ").push_bind(THING_PAGE_SIZE + 1);
+    builder.push(" LIMIT ").push_bind(page_size + 1);
 
     // Gets a page of things + 1 extra entry
     let mut things: Vec<Thing> = builder
@@ -130,7 +136,7 @@ pub async fn get_thing_page(
         .await?;
 
     // Returns thing page, with cursor if there are more rows
-    let has_more_rows = things.len() as i32 == THING_PAGE_SIZE + 1;
+    let has_more_rows = things.len() as i32 == page_size + 1;
     let thing_page = if has_more_rows {
         let last_thing = things.pop().unwrap();
         let cursor = Some(BASE64_STANDARD.encode(&last_thing.name));
@@ -144,7 +150,7 @@ pub async fn get_thing_page(
             cursor: None,
         }
     };
-    return Ok((StatusCode::OK, Json(thing_page)));
+    Ok((StatusCode::OK, Json(thing_page)))
 }
 
 pub async fn create_thing(
@@ -176,7 +182,7 @@ pub async fn create_thing_inner(
     ";
     let thing: Thing = sqlx::query_as(query)
         .bind(account_id)
-        .bind(&thing_name)
+        .bind(thing_name)
         .bind(&image_name)
         .fetch_one(&state.pool)
         .await?;

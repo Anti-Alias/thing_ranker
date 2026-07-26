@@ -108,7 +108,7 @@ pub async fn create_login_token(
         email: account.email,
         exp: Utc::now().timestamp() + jwt_exp_seconds,
     };
-    let account_jwt = encode(&Header::default(), &account_claims, &encoding_key)?;
+    let account_jwt = encode(&Header::default(), &account_claims, encoding_key)?;
     Ok(account_jwt)
 }
 

@@ -9,6 +9,8 @@ import SearchInput from "./SearchInput";
 
 type LoadingState = 'loading' | 'finished';
 
+const defaultPageSize = 18;
+
 const orderOptions = createListCollection({
   items: [
     { label: 'Ascending', value: 'asc' },
@@ -18,11 +20,18 @@ const orderOptions = createListCollection({
 
 interface ItemListPageParams {
   /** Function that fetches item pages from API*/
-  fetchItemPage: (order: Order, name?: string | null, cursor?: string | null) => Promise<ItemPage>;
+  fetchItemPage: (
+    pageSize?: number | null,
+    order?: Order | null,
+    name?: string | null,
+    cursor?: string | null,
+  ) => Promise<ItemPage>;
   /** What to do when an item card is clicked */
   onItemClick?: (item: Item) => void;
   /** Function that generates a link for each item card */
   itemHref?: (item: Item) => string;
+  /** Page size of item list */
+  pageSize?: number | null,
   /** If hidden, does not render. This allows data fetching even when the component is not visible. */
   hidden?: boolean;
 }
@@ -31,6 +40,7 @@ function ItemList({
   fetchItemPage,
   onItemClick,
   itemHref,
+  pageSize: ps,
   hidden,
 }: ItemListPageParams) {
 
@@ -41,13 +51,14 @@ function ItemList({
   const [order, setOrder] = useState<Order>('asc');
   const [hideSearch, setHideSearch] = useState<boolean>(true);
   const endOfData = !cursor;
+  const pageSize = ps ?? defaultPageSize;
 
   // Loads initial page of items
   useEffect(() => {
     const loadInitialPage = async () => {
       try {
         setLoadingState('loading');
-        const firstPage = await fetchItemPage(order, search);
+        const firstPage = await fetchItemPage(pageSize, order, search);
         const hasMorePages = !!firstPage.cursor;
         const isSearchEmpty = search.length == 0;
         setItems(firstPage.items);
@@ -69,7 +80,7 @@ function ItemList({
   const loadAdditionalPage = async () => {
     try {
       setLoadingState('loading');
-      const nextPage = await fetchItemPage(order, search, cursor);
+      const nextPage = await fetchItemPage(pageSize, order, search, cursor);
       setItems([...items, ...nextPage.items])
       setCursor(nextPage.cursor);
     }

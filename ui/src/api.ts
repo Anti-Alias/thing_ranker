@@ -26,11 +26,14 @@ export async function fetchThing(thingId: number): Promise<Thing> {
 
 /** Fetches a page of things */
 export async function fetchThingPage(
-  order: Order,
+  pageSize?: number | null,
+  order?: Order | null,
   name?: string | null,
   cursor?: string | null,
 ): Promise<ThingPage> {
-  const params = new URLSearchParams({ order });
+  const params = new URLSearchParams();
+  if (pageSize) params.append('pageSize', pageSize.toString());
+  if (order) params.append('order', order);
   if (cursor) params.append('cursor', cursor);
   if (name) params.append('name', name);
   const url = new URL(`${API_BASE_URL}/things`);
@@ -47,11 +50,14 @@ export async function fetchThingPage(
 /** Fetches a page of things for a particular category */
 export async function fetchThingPageForCategory(
   categoryId: number,
-  order: Order,
+  pageSize?: number | null,
+  order?: Order | null,
   name?: string | null,
   cursor?: string | null,
 ): Promise<CategoryPage> {
-  const params = new URLSearchParams({ categoryId: categoryId.toString(), order });
+  const params = new URLSearchParams({ categoryId: categoryId.toString() });
+  if (pageSize) params.append('pageSize', pageSize.toString());
+  if (order) params.append('order', order);
   if (cursor) params.append('cursor', cursor);
   if (name) params.append('name', name);
   const url = new URL(`${API_BASE_URL}/things`);
@@ -77,11 +83,14 @@ export async function fetchCategory(categoryId: number): Promise<Category> {
 
 /** Fetches a page of categories  */
 export async function fetchCategoryPage(
-  order: Order,
+  pageSize?: number | null,
+  order?: Order | null,
   name?: string | null,
   cursor?: string | null,
 ): Promise<CategoryPage> {
-  const params = new URLSearchParams({ order });
+  const params = new URLSearchParams();
+  if (pageSize) params.append('pageSize', pageSize.toString());
+  if (order) params.append('order', order);
   if (cursor) params.append('cursor', cursor);
   if (name) params.append('name', name);
   const url = new URL(`${API_BASE_URL}/categories`);
@@ -98,11 +107,14 @@ export async function fetchCategoryPage(
 /** Fetches a page of categories for a particular thing */
 export async function fetchCategoryPageForThing(
   thingId: number,
-  order: Order,
+  pageSize?: number | null,
+  order?: Order | null,
   name?: string | null,
   cursor?: string | null,
 ): Promise<CategoryPage> {
-  const params = new URLSearchParams({ thingId: thingId.toString(), order });
+  const params = new URLSearchParams({ thingId: thingId.toString() });
+  if (pageSize) params.append('pageSize', pageSize.toString());
+  if (order) params.append('order', order);
   if (cursor) params.append('cursor', cursor);
   if (name) params.append('name', name);
   const url = new URL(`${API_BASE_URL}/categories`);

@@ -6,6 +6,8 @@ use serde::Serialize;
 
 use crate::app::ApiError;
 
+pub const DEFAULT_PAGE_SIZE: i32 = 32;
+pub const MAX_PAGE_SIZE: i32 = 64;
 pub const STATIC_FILE_BASE_PATH: &str = "assets";
 
 /// Commonly used sorting order
