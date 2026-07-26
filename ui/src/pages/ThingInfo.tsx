@@ -58,7 +58,7 @@ function ThingInfo() {
       {/* Thing title and image */}
       {loadState.state == 'finished' && <>
         <VStack align="center">
-          <Heading as="h1">{`${loadState.state} (Thing)`}</Heading>
+          <Heading as="h1">{`${loadState.thing.name} (Thing)`}</Heading>
           <Image
             width={ITEM_WIDTH}
             height={ITEM_HEIGHT}
