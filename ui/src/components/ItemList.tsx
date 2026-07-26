@@ -99,15 +99,7 @@ function ItemList({
         </HStack>
       }
       {
-        // Heading
-        loadingState == 'finished' && items.length == 0 &&
-        <Text>No results found</Text>
-      }
-      {
-        // Item list
-        items.length != 0 && <>
-          <ItemListContent items={items} onItemClick={onItemClick} itemHref={itemHref} />
-        </>
+        <ItemListContent items={items} onItemClick={onItemClick} itemHref={itemHref} />
       }
       {
         // Load more button

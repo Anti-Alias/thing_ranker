@@ -4,5 +4,5 @@ export const GENERIC_FAILURE_MESSAGE = "Something went wrong. Please try again l
 export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 export const CONTENT_WIDTH = 1400;
 
-export const ITEM_WIDTH = 220;
-export const ITEM_HEIGHT = 220;
+export const ITEM_WIDTH = 231;
+export const ITEM_HEIGHT = 231;
