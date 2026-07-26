@@ -8,13 +8,18 @@ import { ASSET_BASE_URL, ITEM_HEIGHT, ITEM_WIDTH } from "../constants";
 import ItemList from "../components/ItemList";
 import type { Order } from "../model/order";
 
+type LoadState =
+  { state: 'loading' } |
+  { state: 'finished', thing: Thing } |
+  { state: 'failed' };
+
 type ThingInfoPathParams = { thingId: string; }
 
 /** Page that displays information about a single thing */
 function ThingInfo() {
 
   const { thingId: thingIdStr } = useParams<ThingInfoPathParams>();
-  const [thing, setThing] = useState<Thing | null>(null);
+  const [loadState, setLoadState] = useState<LoadState>({ state: 'loading' });
 
   if (!thingIdStr) throw new Error("thingId not supplied in route");
   const thingId = Number.parseInt(thingIdStr);
@@ -28,12 +33,13 @@ function ThingInfo() {
   useEffect(() => {
     const loadThing = async () => {
       try {
-        const thingResp = await fetchThing(thingId);
-        setThing(thingResp);
+        const thing = await fetchThing(thingId);
+        setLoadState({ state: 'finished', thing });
       }
       catch (e: any) {
         console.log('Failed to load thing:', e);
         toaster.create({ description: "Failed to load thing", type: "error" });
+        setLoadState({ state: 'failed' });
       }
     };
     loadThing();
@@ -43,28 +49,28 @@ function ThingInfo() {
     <VStack align="stretch">
 
       {/* Loading spinner */}
-      {!thing &&
+      {loadState.state == 'loading' &&
         <VStack align="center">
           <Spinner size="xl" />
         </VStack>
       }
 
       {/* Thing title and image */}
-      {thing && <>
+      {loadState.state == 'finished' && <>
         <VStack align="center">
-          <Heading as="h1">{`${thing.name} (Thing)`}</Heading>
+          <Heading as="h1">{`${loadState.state} (Thing)`}</Heading>
           <Image
             width={ITEM_WIDTH}
             height={ITEM_HEIGHT}
-            src={ASSET_BASE_URL + '/images/' + thing.image}
-            alt={thing.name}
+            src={ASSET_BASE_URL + '/images/' + loadState.thing.image}
+            alt={loadState.thing.name}
           />
         </VStack>
       </>
       }
 
       {/* Categories of thing */}
-      {thing &&
+      {loadState.state == 'finished' &&
         <VStack align="center">
           <Heading alignSelf="start" as="h2">Categories</Heading>
         </VStack>
@@ -72,7 +78,7 @@ function ThingInfo() {
       <ItemList
         fetchItemPage={fetchCategoryPage}
         itemHref={item => `/categories/${item.id}`}
-        hidden={!thing}
+        hidden={loadState.state != 'finished'}
       />
     </VStack >
   );
