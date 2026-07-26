@@ -10,12 +10,14 @@ export interface NavbarProps {
   setAccount: (account: Account | null) => void;
 }
 
+const buttonWidth = '70px';
+
 export default function Navbar({ account, setAccount }: NavbarProps) {
 
   const signedIn = !!account;
 
   return (
-    <HStack as="nav" bg="bg" paddingTop={2} position="sticky" top={0} width={CONTENT_WIDTH} zIndex={1}>
+    <HStack as="nav" bg="bg" padding="6px 0 6px 0" position="sticky" top={0} width={CONTENT_WIDTH} zIndex={1}>
 
       { /** Left */}
       <Link to="/">
@@ -42,18 +44,20 @@ export default function Navbar({ account, setAccount }: NavbarProps) {
       <Spacer />
 
       { /** Right */}
-      {
-        account &&
-        <AvatarGroup>
-          <Avatar.Root size="xs">
-            <Avatar.Fallback />
-            <Avatar.Image src={account.picture} />
-          </Avatar.Root>
-        </AvatarGroup>
-      }
-      {!signedIn && <SignInButton setAccount={setAccount} />}
-      {signedIn && <Button size="xs" onClick={() => setAccount(null)}>Sign out</Button>}
-      <ColorModeButton />
+      <HStack justify="end" width="180px">
+        {
+          account &&
+          <AvatarGroup>
+            <Avatar.Root size="xs">
+              <Avatar.Fallback />
+              <Avatar.Image src={account.picture} />
+            </Avatar.Root>
+          </AvatarGroup>
+        }
+        {!signedIn && <SignInButton width={buttonWidth} setAccount={setAccount} />}
+        {signedIn && <Button width={buttonWidth} size="xs" onClick={() => setAccount(null)}>Sign out</Button>}
+        <ColorModeButton />
+      </HStack>
     </HStack >
   )
 }

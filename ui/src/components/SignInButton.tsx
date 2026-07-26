@@ -6,10 +6,11 @@ import { parseAccountToken, type Account } from "../model/account";
 import { fetchAccountToken } from "../api";
 
 interface SignInButtonProps {
+  width?: number | string,
   setAccount: (account: Account) => void;
 }
 
-export default function SignInButton({ setAccount }: SignInButtonProps) {
+export default function SignInButton({ setAccount, width }: SignInButtonProps) {
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -37,7 +38,7 @@ export default function SignInButton({ setAccount }: SignInButtonProps) {
 
       { /** Sign in button; Triggers popup */}
       <Dialog.Trigger asChild>
-        <Button size="xs">Sign in</Button>
+        <Button width={width} size="xs">Sign in</Button>
       </Dialog.Trigger>
 
       { /** Popup Dialog */}

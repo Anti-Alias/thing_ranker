@@ -1,4 +1,4 @@
-import { VStack, Spinner, HStack, createListCollection, Button, Text } from "@chakra-ui/react";
+import { VStack, Spinner, HStack, createListCollection, Button } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import type { Item, ItemPage } from "../model/item";
 import { toaster } from "./ui/toaster";
