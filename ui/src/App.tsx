@@ -24,7 +24,7 @@ export default function App() {
   return (
     <Box marginBottom={2}>
       <Toaster />
-      <VStack align="center">
+      <VStack align="center" gap={0}>
         <Navbar account={account} setAccount={setAccount} />
         <Box width={CONTENT_WIDTH}>
           { /** Current page */}
